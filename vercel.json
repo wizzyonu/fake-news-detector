@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "pages/api/analyze.js": {
+      "maxDuration": 30,
+      "rateLimit": {
+        "window": 60,
+        "limit": 5
+      }
+    }
+  }
+}

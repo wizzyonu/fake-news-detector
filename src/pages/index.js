@@ -1,78 +1,130 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState } from 'react';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Cache pipeline to avoid reloading
+
 
 export default function Home() {
+  const [input, setInput] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setError('');
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: input.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setResult(data);
+      } else {
+        setError(data.error || 'Analysis failed. Please try again.');
+      }
+    } catch (err) {
+      setError('Network error. Check your internet connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black`}
-    >
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the index.js file.
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4 sm:p-6">
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            🕵️‍♂️ Fake News Detector
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-600 text-sm sm:text-base">
+            AI-powered verification for Nigerian citizens — transparent and free
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="input" className="block text-sm font-medium text-gray-700 mb-2">
+              Paste news text or URL:
+            </label>
+            <textarea
+              id="input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={4}
+              className="w-full border border-gray-800 rounded-md px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent "
+              placeholder="Example: 'Tinubu bans WhatsApp!' or https://punchng.com/..."
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs/pages/getting-started?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200 disabled:opacity-50"
           >
-            Documentation
-          </a>
+            {loading ? '🔍 Analyzing with AI...' : 'Analyze'}
+          </button>
+        </form>
+
+        {error && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-center">{error}</p>
+          </div>
+        )}
+
+        {result && (
+          <div className="mt-8 p-5 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="font-semibold text-lg text-gray-800 mb-3">🔍 AI Analysis Result</h3>
+            
+            <div className="mb-3">
+              <span className={`text-2xl font-bold ${
+                result.classification === 'FAKE' 
+                  ? 'text-red-600' 
+                  : 'text-green-600'
+              }`}>
+                {result.classification === 'FAKE' ? '🚨 FAKE' : '✅ REAL'}
+              </span>
+            </div>
+
+            <div className="text-sm text-gray-700 space-y-1">
+              <p>
+                <span className="font-medium">Confidence:</span>{' '}
+                <span className="font-semibold">{result.confidence}%</span>
+              </p>
+              <p>
+                <span className="font-medium">AI Model:</span>{' '}
+                <span className="font-mono text-blue-600">{result.model}</span>
+              </p>
+              <p>
+                <span className="font-medium">Analyzed:</span> {result.analyzed}
+              </p>
+            </div>
+
+            <div className="mt-4 p-3 bg-white border border-yellow-100 rounded">
+              <p className="text-xs text-gray-700 italic">
+                ⚠️ <strong>Note:</strong> Confidence is estimated by the system. 
+                {result.model} provides a verdict but not a native probability score.
+              </p>
+              <p className="text-xs text-red-600 italic mt-1">
+                This is an AI prediction, not a fact-check. False positives may occur. 
+                Do not use for punitive decisions.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 text-center text-xs text-gray-500">
+          <p>Project by ONU MICHAEL CHIADIKOBI | Lead City University</p>
+          <p className="mt-1">CSC 407 Final Year Project | Frugal AI for Nigeria</p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
