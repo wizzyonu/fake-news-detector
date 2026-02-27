@@ -42,7 +42,7 @@ export default function Home() {
         {/* Header */}
         <div className="bg-green-700 p-6 sm:p-8 text-center">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 tracking-tight">
-            🕵️‍♂️ Fake News Detector
+             Fake News Detector
           </h1>
           <p className="text-green-100 text-sm sm:text-base font-semibold">
             AI-powered verification for Nigerian citizens — transparent and free
@@ -173,13 +173,13 @@ export default function Home() {
         {/* Footer - INCREASED FONT WEIGHT */}
         <div className="bg-gray-100 px-6 py-5 border-t border-gray-200 text-center">
           <p className="text-sm text-gray-700 font-bold">
-            Project by <span className="text-gray-900 font-extrabold">ONU MICHAEL CHIADIKOBI</span> | CSC 407 Final Year Project
+            Project by <span className="text-gray-900 font-extrabold">ONU MICHAEL CHIADIKOBI</span> 
           </p>
           <p className="text-sm text-gray-600 mt-1 font-bold">
             Lead City University | Frugal AI for Nigeria
           </p>
           <p className="text-xs text-gray-500 mt-2 font-semibold">
-            © 2025 - All Rights Reserved
+            © 2026 - All Rights Reserved
           </p>
         </div>
       </div>
