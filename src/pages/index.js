@@ -179,7 +179,7 @@ export default function Home() {
             Lead City University | Frugal AI for Nigeria
           </p>
           <p className="text-xs text-gray-500 mt-2 font-semibold">
-            © 2026 - All Rights Reserved
+            © 2026 - All Rights: Reserved
           </p>
         </div>
       </div>
