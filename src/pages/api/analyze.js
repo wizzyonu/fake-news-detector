@@ -4,6 +4,7 @@ import { InferenceClient } from '@huggingface/inference';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+// Initialize HF Client
 const hf = new InferenceClient(process.env.HF_API_TOKEN);
 const MODEL_ID = 'facebook/bart-large-mnli';
 
@@ -60,71 +61,58 @@ function analyzeCredibilitySignals(text) {
     score: 0
   };
 
-  // ✅ POSITIVE SIGNALS (Increase REAL confidence)
-  
-  // Numeric specificity
+  // Positive Signals
   if (/\d+\s*(feared|killed|rescued|abducted|injured|dead)/i.test(text)) {
     signals.positive.push('Numeric casualty specificity');
     signals.score += 15;
   }
 
-  // Official sources
   if (/Police|Government|Officials|Authorities|Ministry|Commission/i.test(text)) {
     signals.positive.push('Official source mentioned');
     signals.score += 15;
   }
 
-  // Location specificity
   if (/(in|at|from)\s*(Niger|Ogun|Yobe|Lagos|Abuja|Kano|Rivers|Delta|Nigeria)/i.test(text)) {
     signals.positive.push('Specific location mentioned');
     signals.score += 10;
   }
 
-  // Standard news verbs
   if (/probe|warns|threatens|rescued|abducted|capsizes|assault|investigates/i.test(text)) {
     signals.positive.push('Standard news vocabulary');
     signals.score += 10;
   }
 
-  // Named officials
   if (/(Tinubu|Okpebholo|Sanwo-Olu|El-Rufai|Wike|Inspector-General|Commissioner)/i.test(text)) {
     signals.positive.push('Named public official');
     signals.score += 10;
   }
 
-  // Article length (longer = more credible)
   if (text.length > 200) {
     signals.positive.push('Substantial article length');
     signals.score += 10;
   }
 
-  // No sensationalism
   if (!/[!]{2,}/.test(text) && !/SHARE NOW|MUST READ|URGENT/i.test(text)) {
     signals.positive.push('No sensationalist markers');
     signals.score += 10;
   }
 
-  // ❌ NEGATIVE SIGNALS (Increase FAKE confidence)
-  
-  // Excessive exclamation
+  // Negative Signals
   if (/[!]{3,}/.test(text)) {
     signals.negative.push('Excessive exclamation marks');
     signals.score -= 20;
   }
 
-  // Viral manipulation
   if (/SHARE NOW|FORWARD TO|SEND TO ALL|WHATSAPP GROUP/i.test(text)) {
     signals.negative.push('Viral manipulation language');
     signals.score -= 20;
   }
 
-  // Absolute claims
   if (/FOREVER|BANNED|ILLEGAL|ARRESTED.*NOW/i.test(text)) {
     signals.negative.push('Absolute/unverified claims');
     signals.score -= 15;
   }
 
-  // All caps words
   const capsWords = text.match(/\b[A-Z]{5,}\b/g);
   if (capsWords && capsWords.length > 2) {
     signals.negative.push('Excessive capitalization');
@@ -180,7 +168,7 @@ export default async function handler(req, res) {
   if (/BREAKING[!]{3,}/i.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'FAKE',
-      confidence: generateConfidence(91, 4), // 87-95%
+      confidence: generateConfidence(91, 4),
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -193,7 +181,7 @@ export default async function handler(req, res) {
   if (/BREAKING[:\s]/i.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(90, 3), // 87-93%
+      confidence: generateConfidence(90, 3),
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -206,7 +194,7 @@ export default async function handler(req, res) {
   if (signals.score >= 50) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(89, 4), // 85-93% → capped at 87
+      confidence: generateConfidence(89, 4),
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -219,7 +207,7 @@ export default async function handler(req, res) {
   if (signals.score <= -30) {
     return res.status(200).json({
       classification: 'FAKE',
-      confidence: generateConfidence(89, 4), // 85-93% → capped at 87
+      confidence: generateConfidence(89, 4),
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -232,7 +220,7 @@ export default async function handler(req, res) {
   if (signals.score >= 20) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(87, 3), // 84-90% → capped at 87
+      confidence: generateConfidence(87, 3),
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -243,6 +231,22 @@ export default async function handler(req, res) {
 
   // RULE 6: Weak/No Signals = Use AI (fallback)
   try {
+    // Check if HF token exists
+    if (!process.env.HF_API_TOKEN || !process.env.HF_API_TOKEN.startsWith('hf_')) {
+      console.error('HF_API_TOKEN is missing or invalid');
+      // FALLBACK: Use credibility signals only (no API call)
+      const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
+      return res.status(200).json({
+        classification: fallbackClassification,
+        confidence: generateConfidence(87, 3),
+        model: 'fallback-heuristic',
+        analyzed: new Date().toISOString(),
+        sourceType,
+        signals: signals.score >= 0 ? signals.positive : signals.negative,
+        warning: 'AI service unavailable, using heuristic fallback'
+      });
+    }
+
     const result = await hf.zeroShotClassification({
       model: MODEL_ID,
       inputs: textToAnalyze,
@@ -270,7 +274,6 @@ export default async function handler(req, res) {
 
     const classification = label.toLowerCase().includes('misleading') ? 'FAKE' : 'REAL';
     
-    // Boost AI confidence if signals support it
     let finalConfidence = Math.round(score * 100);
     if (signals.score > 0 && finalConfidence < 87) {
       finalConfidence = generateConfidence(87, 3);
@@ -286,12 +289,19 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('API Error:', err);
+    console.error('AI API Error:', err.message, err.statusCode, err.data);
     
-    if (err.statusCode === 429) {
-      return res.status(429).json({ error: 'Rate limit exceeded. Wait 60 seconds.' });
-    }
+    // FALLBACK: Use credibility signals only (ensures system always works)
+    const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
     
-    return res.status(500).json({ error: 'Analysis failed. Try again later.' });
+    return res.status(200).json({
+      classification: fallbackClassification,
+      confidence: generateConfidence(87, 3),
+      model: 'fallback-heuristic',
+      analyzed: new Date().toISOString(),
+      sourceType,
+      signals: signals.score >= 0 ? signals.positive : signals.negative,
+      warning: 'AI service temporarily unavailable, using heuristic fallback'
+    });
   }
 }

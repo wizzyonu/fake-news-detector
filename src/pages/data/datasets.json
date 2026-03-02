@@ -1,0 +1,482 @@
+[
+  {
+    "id": 1,
+    "text": "JUST IN: 30 feared killed, many abducted in Niger bandit attack",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2025,
+    "category": "Security"
+  },
+  {
+    "id": 2,
+    "text": "Police probe driver assault by suspected fake officers in Ogun",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2025,
+    "category": "Crime"
+  },
+  {
+    "id": 3,
+    "text": "25 feared killed, 13 rescued as boat capsizes in Yobe",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2025,
+    "category": "Security"
+  },
+  {
+    "id": 4,
+    "text": "Okpebholo warns contractors against project delay, threatens contract revocation",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2025,
+    "category": "Politics"
+  },
+  {
+    "id": 5,
+    "text": "Anthony Joshua pays tribute to deceased friends in emotional post",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2025,
+    "category": "Sports"
+  },
+  {
+    "id": 6,
+    "text": "BREAKING!!! Tinubu bans WhatsApp forever! Share now to all groups!",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 7,
+    "text": "URGENT: FG announces free fuel for all Nigerians starting tomorrow",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Economy"
+  },
+  {
+    "id": 8,
+    "text": "SHOCKING: Lagos State Government closes all schools indefinitely",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Education"
+  },
+  {
+    "id": 9,
+    "text": "NNPC confirms petrol price will drop to ₦100 per litre next week",
+    "source": "Twitter Rumor",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Economy"
+  },
+  {
+    "id": 10,
+    "text": "BREAKING: President Tinubu resigns effective immediately!!!",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 11,
+    "text": "Nigeria records 15% economic growth in Q4 2024, says NBS",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 12,
+    "text": "FG launches new student loan scheme for tertiary institutions",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Education"
+  },
+  {
+    "id": 13,
+    "text": "MUST READ: Drink this herbal mixture to cure hypertension in 3 days",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Health"
+  },
+  {
+    "id": 14,
+    "text": "Police arrest 50 suspected cultists in Rivers State crackdown",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Security"
+  },
+  {
+    "id": 15,
+    "text": "BREAKING!!! CBN prints new ₦10,000 note, old notes invalid",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Economy"
+  },
+  {
+    "id": 16,
+    "text": "Super Eagles announce friendly match against Brazil in Abuja",
+    "source": "Complete Sports",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Sports"
+  },
+  {
+    "id": 17,
+    "text": "URGENT ALERT: Kidnappers plan to attack all Lagos roads tonight",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Security"
+  },
+  {
+    "id": 18,
+    "text": "Tinubu approves 50% salary increase for civil servants",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 19,
+    "text": "SHOCKING: Pastor claims fasting for 100 days will remove poverty",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Religion"
+  },
+  {
+    "id": 20,
+    "text": "Lagos State recruits 5,000 new teachers for public schools",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Education"
+  },
+  {
+    "id": 21,
+    "text": "BREAKING: Nigeria exits ECOWAS effective immediately!!!",
+    "source": "Twitter Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 22,
+    "text": "FG inaugurates committee to review fuel subsidy removal",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2023,
+    "category": "Economy"
+  },
+  {
+    "id": 23,
+    "text": "MUST SHARE: 5G towers cause cancer, destroy them now",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2022,
+    "category": "Health"
+  },
+  {
+    "id": 24,
+    "text": "Kano State government launches free healthcare for under-5s",
+    "source": "Daily Trust",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Health"
+  },
+  {
+    "id": 25,
+    "text": "BREAKING!!! All Nigerian banks to close permanently tomorrow",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Economy"
+  },
+  {
+    "id": 26,
+    "text": "Nigeria Customs Service intercepts ₦2bn worth of smuggled rice",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 27,
+    "text": "URGENT: Tinubu declares war on all opposition governors",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 28,
+    "text": "FG partners with World Bank for $1bn education grant",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Education"
+  },
+  {
+    "id": 29,
+    "text": "SHOCKING: Governor dies in office, deputy sworn in secretly",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Politics"
+  },
+  {
+    "id": 30,
+    "text": "Nigerian Army neutralizes 100 terrorists in Borno operation",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Security"
+  },
+  {
+    "id": 31,
+    "text": "BREAKING: JAMB cancels all 2024 UTME results!!!",
+    "source": "Twitter Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Education"
+  },
+  {
+    "id": 32,
+    "text": "FG announces new minimum wage of ₦70,000 for workers",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 33,
+    "text": "MUST READ: Drink bleach to cure coronavirus instantly",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2020,
+    "category": "Health"
+  },
+  {
+    "id": 34,
+    "text": "Lagos State government launches traffic reform initiative",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 35,
+    "text": "BREAKING!!! Nigeria joins BRICS coalition effective immediately",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 36,
+    "text": "FG commissions 200km expressway in South-East zone",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Infrastructure"
+  },
+  {
+    "id": 37,
+    "text": "URGENT: All SIM cards to be deactivated without NIN link today",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Technology"
+  },
+  {
+    "id": 38,
+    "text": "Nigeria Electricity Regulatory Commission approves new tariff band",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 39,
+    "text": "SHOCKING: President builds palace in Dubai with public funds",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 40,
+    "text": "FG launches national identity management digital upgrade",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Technology"
+  },
+  {
+    "id": 41,
+    "text": "BREAKING: All universities shut down indefinitely due to strike",
+    "source": "Twitter Rumor",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Education"
+  },
+  {
+    "id": 42,
+    "text": "Nigerian doctors embark on warning strike over poor conditions",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Health"
+  },
+  {
+    "id": 43,
+    "text": "MUST SHARE: Government pays ₦50,000 to all citizens tomorrow",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 44,
+    "text": "FG signs bilateral trade agreement with European Union",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 45,
+    "text": "BREAKING!!! Tinubu arrested by EFCC for corruption!!!",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 46,
+    "text": "Lagos State records 20% increase in internally generated revenue",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 47,
+    "text": "URGENT: Blood thieves operating in Lagos, avoid night travel",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Security"
+  },
+  {
+    "id": 48,
+    "text": "FG inaugurates national council on climate change",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Environment"
+  },
+  {
+    "id": 49,
+    "text": "SHOCKING: COVID-19 vaccine contains microchips for tracking",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2021,
+    "category": "Health"
+  },
+  {
+    "id": 50,
+    "text": "Nigeria Security and Civil Defence Corps recruits 10,000 officers",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Security"
+  },
+  {
+    "id": 51,
+    "text": "BREAKING: Naira revalued to 1:1 with Dollar by CBN Governor",
+    "source": "Twitter Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Economy"
+  },
+  {
+    "id": 52,
+    "text": "FG launches digital economy strategy for 2024-2030",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Technology"
+  },
+  {
+    "id": 53,
+    "text": "MUST READ: Eating garlic cures diabetes completely",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2022,
+    "category": "Health"
+  },
+  {
+    "id": 54,
+    "text": "Nigerian athletes win 5 gold medals at Commonwealth Games",
+    "source": "Complete Sports",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Sports"
+  },
+  {
+    "id": 55,
+    "text": "BREAKING!!! All pastors banned from preaching in Nigeria",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Religion"
+  },
+  {
+    "id": 56,
+    "text": "FG partners with tech firms to boost startup ecosystem",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Technology"
+  },
+  {
+    "id": 57,
+    "text": "URGENT: Internet will be shut down nationwide for 3 days",
+    "source": "WhatsApp Forward",
+    "label": "FAKE",
+    "year": 2023,
+    "category": "Technology"
+  },
+  {
+    "id": 58,
+    "text": "Lagos State government launches affordable housing scheme",
+    "source": "Vanguard NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Infrastructure"
+  },
+  {
+    "id": 59,
+    "text": "SHOCKING: Vice President flees country amid corruption scandal",
+    "source": "Facebook Rumor",
+    "label": "FAKE",
+    "year": 2024,
+    "category": "Politics"
+  },
+  {
+    "id": 60,
+    "text": "FG announces national census date for 2025",
+    "source": "Punch NG",
+    "label": "REAL",
+    "year": 2024,
+    "category": "Politics"
+  }
+]
