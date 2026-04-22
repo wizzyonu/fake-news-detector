@@ -162,26 +162,39 @@ export default async function handler(req, res) {
   // === STEP 2: Analyze Credibility Signals ===
   const signals = analyzeCredibilitySignals(textToAnalyze);
 
-  // === STEP 3: Apply Classification Rules ===
+  // === STEP 3: Apply Classification Rules (Priority Order) ===
 
-  // RULE 1: BREAKING!!! = FAKE (3+ exclamation marks)
-  if (/BREAKING[!]{3,}/i.test(textToAnalyze)) {
+  // 🔴 RULE 1: Check for !!! ANYWHERE in text (highest priority for sensationalism)
+  if (/[!]{3,}/.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'FAKE',
-      confidence: generateConfidence(91, 4),
+      confidence: generateConfidence(91, 4), // 87-95%
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
-      signals: signals.positive,
-      reason: 'Sensationalist punctuation detected'
+      signals: signals.negative,
+      reason: 'Excessive exclamation marks detected'
     });
   }
 
-  // RULE 2: BREAKING: or BREAKING (no !!!) = REAL
-  if (/BREAKING[:\s]/i.test(textToAnalyze)) {
+  // 🔴 RULE 2: Check for viral manipulation phrases (high priority)
+  if (/MUST READ|MUST SHARE|FORWARD TO|WHATSAPP GROUP/i.test(textToAnalyze)) {
+    return res.status(200).json({
+      classification: 'FAKE',
+      confidence: generateConfidence(89, 4), // 87-93%
+      model: MODEL_ID.split('/')[1],
+      analyzed: new Date().toISOString(),
+      sourceType,
+      signals: signals.negative,
+      reason: 'Viral manipulation language detected'
+    });
+  }
+
+  // 🟢 RULE 3: BREAKING without !!! = REAL (standard news format)
+  if (/BREAKING[:\s]/i.test(textToAnalyze) && !/[!]{3,}/.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(90, 3),
+      confidence: generateConfidence(90, 3), // 87-93%
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -190,11 +203,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // RULE 3: Strong Credibility Signals (score ≥ 50) = REAL
+  // 🟢 RULE 4: Strong Credibility Signals (score ≥ 50) = REAL
   if (signals.score >= 50) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(89, 4),
+      confidence: generateConfidence(89, 4), // 87-93%
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -203,11 +216,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // RULE 4: Strong Negative Signals (score ≤ -30) = FAKE
+  // 🔴 RULE 5: Strong Negative Signals (score ≤ -30) = FAKE
   if (signals.score <= -30) {
     return res.status(200).json({
       classification: 'FAKE',
-      confidence: generateConfidence(89, 4),
+      confidence: generateConfidence(89, 4), // 87-93%
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -216,11 +229,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // RULE 5: Moderate Signals (score 20-49) = REAL (lower confidence)
+  // 🟢 RULE 6: Moderate Signals (score 20-49) = REAL (lower confidence)
   if (signals.score >= 20) {
     return res.status(200).json({
       classification: 'REAL',
-      confidence: generateConfidence(87, 3),
+      confidence: generateConfidence(87, 3), // 87-90%
       model: MODEL_ID.split('/')[1],
       analyzed: new Date().toISOString(),
       sourceType,
@@ -229,12 +242,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // RULE 6: Weak/No Signals = Use AI (fallback)
+  // ⚙️ RULE 7: Weak/No Signals = Use AI (fallback)
   try {
     // Check if HF token exists
     if (!process.env.HF_API_TOKEN || !process.env.HF_API_TOKEN.startsWith('hf_')) {
       console.error('HF_API_TOKEN is missing or invalid');
-      // FALLBACK: Use credibility signals only (no API call)
       const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
       return res.status(200).json({
         classification: fallbackClassification,
@@ -291,7 +303,6 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('AI API Error:', err.message, err.statusCode, err.data);
     
-    // FALLBACK: Use credibility signals only (ensures system always works)
     const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
     
     return res.status(200).json({
