@@ -1,0 +1,302 @@
+[
+  {
+    "id": "coaid_1",
+    "text": "Spraying chlorine or alcohol on the skin kills viruses in the body",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 88,
+    "match": false
+  },
+  {
+    "id": "coaid_2",
+    "text": "CDC reports 1.2 million confirmed COVID-19 cases in United States",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 90,
+    "match": true
+  },
+  {
+    "id": "coaid_3",
+    "text": "Drinking bleach or injecting disinfectant can cure coronavirus",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_4",
+    "text": "WHO declares COVID-19 a global pandemic on March 11, 2020",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_5",
+    "text": "5G networks spread coronavirus and weaken immune system",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 89,
+    "match": true
+  },
+  {
+    "id": "coaid_6",
+    "text": "Face masks reduce transmission of COVID-19 by blocking respiratory droplets",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 90,
+    "match": false
+  },
+  {
+    "id": "coaid_7",
+    "text": "Only older adults can get COVID-19, children are immune",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": true
+  },
+  {
+    "id": "coaid_8",
+    "text": "FDA approves first COVID-19 vaccine for emergency use",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": true
+  },
+  {
+    "id": "coaid_9",
+    "text": "Garlic and ginger can cure coronavirus infection completely",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_10",
+    "text": "Social distancing and hand washing reduce COVID-19 spread",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 90,
+    "match": false
+  },
+  {
+    "id": "coaid_11",
+    "text": "Coronavirus was created in a laboratory as a bioweapon",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 88,
+    "match": true
+  },
+  {
+    "id": "coaid_12",
+    "text": "COVID-19 symptoms include fever, cough, and difficulty breathing",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_13",
+    "text": "Hot weather and sunshine will kill the coronavirus",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 90,
+    "match": false
+  },
+  {
+    "id": "coaid_14",
+    "text": "Hospitals report surge in COVID-19 patients requiring intensive care",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 89,
+    "match": true
+  },
+  {
+    "id": "coaid_15",
+    "text": "Antibiotics can effectively treat and cure COVID-19",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_16",
+    "text": "Vaccination programs begin rollout across multiple countries",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_17",
+    "text": "Rinsing nose with salt water prevents coronavirus infection",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_18",
+    "text": "COVID-19 can spread through respiratory droplets when people talk",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 90,
+    "match": false
+  },
+  {
+    "id": "coaid_19",
+    "text": "Parcels and packages from China carry coronavirus",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": true
+  },
+  {
+    "id": "coaid_20",
+    "text": "Researchers develop COVID-19 tests with rapid results",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 88,
+    "match": false
+  },
+  {
+    "id": "coaid_21",
+    "text": "Drinking alcohol or smoking protects against COVID-19",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 88,
+    "match": true
+  },
+  {
+    "id": "coaid_22",
+    "text": "COVID-19 pandemic causes global economic recession",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_23",
+    "text": "Mosquitoes can transmit coronavirus to humans",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 89,
+    "match": false
+  },
+  {
+    "id": "coaid_24",
+    "text": "Healthcare workers face high risk of COVID-19 infection",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 87,
+    "match": true
+  },
+  {
+    "id": "coaid_25",
+    "text": "Taking high doses of vitamin C can cure coronavirus",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 90,
+    "match": false
+  },
+  {
+    "id": "coaid_26",
+    "text": "COVID-19 vaccines undergo rigorous clinical trials for safety",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 88,
+    "match": true
+  },
+  {
+    "id": "coaid_27",
+    "text": "Children cannot get or spread coronavirus",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 88,
+    "match": true
+  },
+  {
+    "id": "coaid_28",
+    "text": "Lockdown measures reduce COVID-19 transmission rates",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  },
+  {
+    "id": "coaid_29",
+    "text": "Hand dryers can kill coronavirus on skin",
+    "expected": "FAKE",
+    "source": "CoAID-Claim-Fake",
+    "category": "Health",
+    "actual": "REAL",
+    "confidence": 89,
+    "match": false
+  },
+  {
+    "id": "coaid_30",
+    "text": "COVID-19 variants emerge with different transmission rates",
+    "expected": "REAL",
+    "source": "CoAID-News-Real",
+    "category": "Health",
+    "actual": "FAKE",
+    "confidence": 87,
+    "match": false
+  }
+]
