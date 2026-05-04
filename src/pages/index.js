@@ -119,7 +119,7 @@ export default function Home() {
                 <span className={`text-3xl font-extrabold px-6 py-2 rounded-lg ${
                   result.classification === 'FAKE' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                 }`}>
-                  {result.classification === 'FAKE' ? '🚨 FAKE' : '✅ REAL'}
+                  {result.classification === 'FAKE' ? ' FAKE' : 'REAL'}
                 </span>
               </div>
 
@@ -154,7 +154,7 @@ export default function Home() {
               {result.sourceType && (
                 <div className="mb-4">
                   <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded font-bold">
-                    Source: {result.sourceType === 'url' ? '🔗 URL (Scraped)' : '📝 Direct Text'}
+                    Source: {result.sourceType === 'url' ? '🔗 URL (Scraped)' : 'Direct Text'}
                   </span>
                 </div>
               )}

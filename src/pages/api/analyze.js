@@ -164,7 +164,7 @@ export default async function handler(req, res) {
 
   // === STEP 3: Apply Classification Rules (Priority Order) ===
 
-  // 🔴 RULE 1: Check for !!! ANYWHERE in text (highest priority for sensationalism)
+  // RULE 1: Check for !!! ANYWHERE in text (highest priority for sensationalism)
   if (/[!]{3,}/.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'FAKE',
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 🔴 RULE 2: Check for viral manipulation phrases (high priority)
+  //  RULE 2: Check for viral manipulation phrases (high priority)
   if (/MUST READ|MUST SHARE|FORWARD TO|WHATSAPP GROUP/i.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'FAKE',
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 🟢 RULE 3: BREAKING without !!! = REAL (standard news format)
+  //  RULE 3: BREAKING without !!! = REAL (standard news format)
   if (/BREAKING[:\s]/i.test(textToAnalyze) && !/[!]{3,}/.test(textToAnalyze)) {
     return res.status(200).json({
       classification: 'REAL',
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 🟢 RULE 4: Strong Credibility Signals (score ≥ 50) = REAL
+  // RULE 4: Strong Credibility Signals (score ≥ 50) = REAL
   if (signals.score >= 50) {
     return res.status(200).json({
       classification: 'REAL',
@@ -216,7 +216,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 🔴 RULE 5: Strong Negative Signals (score ≤ -30) = FAKE
+  //  RULE 5: Strong Negative Signals (score ≤ -30) = FAKE
   if (signals.score <= -30) {
     return res.status(200).json({
       classification: 'FAKE',
@@ -229,7 +229,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 🟢 RULE 6: Moderate Signals (score 20-49) = REAL (lower confidence)
+  // RULE 6: Moderate Signals (score 20-49) = REAL (lower confidence)
   if (signals.score >= 20) {
     return res.status(200).json({
       classification: 'REAL',
@@ -242,7 +242,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // ⚙️ RULE 7: Weak/No Signals = Use AI (fallback)
+  // RULE 7: Weak/No Signals = Use AI (fallback)
   try {
     // Check if HF token exists
     if (!process.env.HF_API_TOKEN || !process.env.HF_API_TOKEN.startsWith('hf_')) {
