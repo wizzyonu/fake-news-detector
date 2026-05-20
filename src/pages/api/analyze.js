@@ -4,16 +4,17 @@ import { InferenceClient } from '@huggingface/inference';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-// Initialize HF Client
+// Initialize Hugging Face Client
+// Make sure you have HF_API_TOKEN in your .env.local file
 const hf = new InferenceClient(process.env.HF_API_TOKEN);
-const MODEL_ID = 'facebook/bart-large-mnli';
+const MODEL_ID = 'facebook/bart-large-mnli'; // Or your preferred zero-shot model
 
-// === URL DETECTION ===
+// === HELPER: Detect URL ===
 function isUrl(text) {
   return /^https?:\/\//i.test(text);
 }
 
-// === SCRAPE ARTICLE TEXT ===
+// === HELPER: Scrape Article Text from URL ===
 async function scrapeArticleText(url) {
   try {
     const response = await axios.get(url, {
@@ -24,19 +25,34 @@ async function scrapeArticleText(url) {
     });
 
     const $ = cheerio.load(response.data);
-    $('script, style, nav, footer, .advertisement, .sidebar, .comments').remove();
+    
+    // Remove scripts, styles, navs, footers, ads, etc.
+    $('script, style, nav, footer, .advertisement, .sidebar, .comments, header').remove();
 
-    const selectors = ['article', '.article-content', '.post-content', '.entry-content', 'main', 'p'];
+    // Selectors for main content
+    const selectors = [
+      'article', 
+      '.article-content', 
+      '.post-content', 
+      '.entry-content', 
+      'main', 
+      'p'
+    ];
+    
     let articleText = '';
 
     for (const selector of selectors) {
       const element = $(selector);
       if (element.length > 0) {
-        articleText = element.text().replace(/\s+/g, ' ').trim();
-        if (articleText.length > 100) break;
+        // Get text from the largest content block found
+        const text = element.text().replace(/\s+/g, ' ').trim();
+        if (text.length > articleText.length) {
+          articleText = text;
+        }
       }
     }
 
+    // Fallback to body if specific selectors fail
     if (articleText.length < 100) {
       articleText = $('body').text().replace(/\s+/g, ' ').trim();
     }
@@ -45,23 +61,20 @@ async function scrapeArticleText(url) {
       throw new Error('Could not extract meaningful content from URL');
     }
 
-    return articleText.substring(0, 500);
+    // Limit text length to avoid API token limits (usually ~500-1000 tokens is safe for zero-shot)
+    return articleText.substring(0, 800); 
 
   } catch (err) {
     console.error('Scraping error:', err.message);
-    throw new Error('Failed to fetch article content.');
+    throw new Error('Failed to fetch or parse article content.');
   }
 }
 
-// === CREDIBILITY SIGNAL DETECTION ===
+// === HELPER: Heuristic Credibility Signals ===
 function analyzeCredibilitySignals(text) {
-  const signals = {
-    positive: [],
-    negative: [],
-    score: 0
-  };
+  const signals = { positive: [], negative: [], score: 0 };
 
-  // Positive Signals
+  // --- Positive Signals (Indicators of Real News) ---
   if (/\d+\s*(feared|killed|rescued|abducted|injured|dead)/i.test(text)) {
     signals.positive.push('Numeric casualty specificity');
     signals.score += 15;
@@ -97,7 +110,7 @@ function analyzeCredibilitySignals(text) {
     signals.score += 10;
   }
 
-  // Negative Signals
+  // --- Negative Signals (Indicators of Fake News) ---
   if (/[!]{3,}/.test(text)) {
     signals.negative.push('Excessive exclamation marks');
     signals.score -= 20;
@@ -122,197 +135,98 @@ function analyzeCredibilitySignals(text) {
   return signals;
 }
 
-// === GENERATE VARIED CONFIDENCE ===
-function generateConfidence(base, variance) {
-  const random = Math.floor(Math.random() * (variance * 2 + 1)) - variance;
-  return Math.max(87, Math.min(95, base + random));
-}
-
 // === MAIN API HANDLER ===
 export default async function handler(req, res) {
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
   const { input } = req.body;
 
+  // Validate Input
   if (!input || typeof input !== 'string' || !input.trim()) {
     return res.status(400).json({ error: 'Input required.' });
   }
 
   const processedInput = input.trim();
-
   if (processedInput.length < 10) {
     return res.status(400).json({ error: 'Input too short (min 10 chars).' });
   }
 
-  // === STEP 1: Check if Input is URL ===
   let textToAnalyze = processedInput;
   let sourceType = 'text';
 
-  if (isUrl(processedInput)) {
-    sourceType = 'url';
-    try {
-      textToAnalyze = await scrapeArticleText(processedInput);
-    } catch (err) {
-      return res.status(400).json({ error: err.message });
-    }
-  }
-
-  // === STEP 2: Analyze Credibility Signals ===
-  const signals = analyzeCredibilitySignals(textToAnalyze);
-
-  // === STEP 3: Apply Classification Rules (Priority Order) ===
-
-  // RULE 1: Check for !!! ANYWHERE in text (highest priority for sensationalism)
-  if (/[!]{3,}/.test(textToAnalyze)) {
-    return res.status(200).json({
-      classification: 'FAKE',
-      confidence: generateConfidence(91, 4), // 87-95%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.negative,
-      reason: 'Excessive exclamation marks detected'
-    });
-  }
-
-  //  RULE 2: Check for viral manipulation phrases (high priority)
-  if (/MUST READ|MUST SHARE|FORWARD TO|WHATSAPP GROUP/i.test(textToAnalyze)) {
-    return res.status(200).json({
-      classification: 'FAKE',
-      confidence: generateConfidence(89, 4), // 87-93%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.negative,
-      reason: 'Viral manipulation language detected'
-    });
-  }
-
-  //  RULE 3: BREAKING without !!! = REAL (standard news format)
-  if (/BREAKING[:\s]/i.test(textToAnalyze) && !/[!]{3,}/.test(textToAnalyze)) {
-    return res.status(200).json({
-      classification: 'REAL',
-      confidence: generateConfidence(90, 3), // 87-93%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.positive,
-      reason: 'Standard news headline format'
-    });
-  }
-
-  // RULE 4: Strong Credibility Signals (score ≥ 50) = REAL
-  if (signals.score >= 50) {
-    return res.status(200).json({
-      classification: 'REAL',
-      confidence: generateConfidence(89, 4), // 87-93%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.positive,
-      reason: 'Multiple credibility markers detected'
-    });
-  }
-
-  //  RULE 5: Strong Negative Signals (score ≤ -30) = FAKE
-  if (signals.score <= -30) {
-    return res.status(200).json({
-      classification: 'FAKE',
-      confidence: generateConfidence(89, 4), // 87-93%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.negative,
-      reason: 'Multiple misinformation markers detected'
-    });
-  }
-
-  // RULE 6: Moderate Signals (score 20-49) = REAL (lower confidence)
-  if (signals.score >= 20) {
-    return res.status(200).json({
-      classification: 'REAL',
-      confidence: generateConfidence(87, 3), // 87-90%
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.positive,
-      reason: 'Some credibility markers detected'
-    });
-  }
-
-  // RULE 7: Weak/No Signals = Use AI (fallback)
   try {
-    // Check if HF token exists
-    if (!process.env.HF_API_TOKEN || !process.env.HF_API_TOKEN.startsWith('hf_')) {
-      console.error('HF_API_TOKEN is missing or invalid');
-      const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
-      return res.status(200).json({
-        classification: fallbackClassification,
-        confidence: generateConfidence(87, 3),
-        model: 'fallback-heuristic',
-        analyzed: new Date().toISOString(),
-        sourceType,
-        signals: signals.score >= 0 ? signals.positive : signals.negative,
-        warning: 'AI service unavailable, using heuristic fallback'
+    // 1. Check if Input is URL and Scrape if necessary
+    if (isUrl(processedInput)) {
+      sourceType = 'url';
+      textToAnalyze = await scrapeArticleText(processedInput);
+    }
+
+    // 2. Run Heuristic Analysis (Local Logic)
+    const heuristicSignals = analyzeCredibilitySignals(textToAnalyze);
+    
+    // 3. Run AI Model (Hugging Face Zero-Shot)
+    // Note: Ensure HF_API_TOKEN is set in your .env.local file
+    let aiLabel = 'REAL';
+    let aiConfidence = 0.5;
+    let modelUsed = 'bart-large-mnli';
+
+    try {
+      const result = await hf.zeroShotClassification({
+        model: MODEL_ID,
+        inputs: textToAnalyze,
+        parameters: {
+          candidate_labels: ['fake news', 'real news'],
+        },
       });
-    }
 
-    const result = await hf.zeroShotClassification({
-      model: MODEL_ID,
-      inputs: textToAnalyze,
-      parameters: {
-        candidate_labels: ['misleading content', 'factual reporting'],
-        multi_class: false
+      // Hugging Face returns labels sorted by score usually, but we check explicitly
+      const scores = {};
+      result.labels.forEach((label, i) => {
+        scores[label] = result.scores[i];
+      });
+
+      if (scores['fake news'] > scores['real news']) {
+        aiLabel = 'FAKE';
+        aiConfidence = scores['fake news'];
+      } else {
+        aiLabel = 'REAL';
+        aiConfidence = scores['real news'];
       }
-    });
-
-    let label, score;
-
-    if (Array.isArray(result) && result.length > 0 && result[0].label) {
-      label = result[0].label;
-      score = result[0].score;
-    } else if (result?.labels && result?.scores && result.labels.length > 0) {
-      const topIdx = result.scores.indexOf(Math.max(...result.scores));
-      label = result.labels[topIdx];
-      score = result.scores[topIdx];
-    } else if (result?.label && result?.score) {
-      label = result.label;
-      score = result.score;
-    } else {
-      throw new Error('Invalid AI response format');
+    } catch (aiError) {
+      console.error('Hugging Face API Error:', aiError);
+      // Fallback if API fails: Use Heuristics only
+      aiLabel = heuristicSignals.score < -10 ? 'FAKE' : 'REAL';
+      aiConfidence = 0.6; // Lower confidence for fallback
+      modelUsed = 'heuristic-fallback';
     }
 
-    const classification = label.toLowerCase().includes('misleading') ? 'FAKE' : 'REAL';
-    
-    let finalConfidence = Math.round(score * 100);
-    if (signals.score > 0 && finalConfidence < 87) {
-      finalConfidence = generateConfidence(87, 3);
+    // 4. Combine Results for Final Verdict
+    // You can adjust this logic. Currently, we prioritize AI but use heuristics for explanation.
+    let finalVerdict = aiLabel;
+    let finalConfidence = Math.round(aiConfidence * 100);
+
+    // Optional: Boost confidence if heuristics agree with AI
+    if ((aiLabel === 'FAKE' && heuristicSignals.score < -10) || 
+        (aiLabel === 'REAL' && heuristicSignals.score > 10)) {
+      finalConfidence = Math.min(99, finalConfidence + 5);
     }
 
+    // 5. Send Response
     return res.status(200).json({
-      classification,
-      confidence: Math.max(87, finalConfidence),
-      model: MODEL_ID.split('/')[1],
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.positive.length > 0 ? signals.positive : undefined
+      verdict: finalVerdict,
+      confidence: finalConfidence,
+      model: modelUsed,
+      sourceType: sourceType,
+      signals: heuristicSignals,
+      disclaimer: 'This is an AI prediction based on pattern matching. Always verify with trusted sources.',
+      rawTextPreview: textToAnalyze.substring(0, 100) + '...'
     });
 
-  } catch (err) {
-    console.error('AI API Error:', err.message, err.statusCode, err.data);
-    
-    const fallbackClassification = signals.score >= 0 ? 'REAL' : 'FAKE';
-    
-    return res.status(200).json({
-      classification: fallbackClassification,
-      confidence: generateConfidence(87, 3),
-      model: 'fallback-heuristic',
-      analyzed: new Date().toISOString(),
-      sourceType,
-      signals: signals.score >= 0 ? signals.positive : signals.negative,
-      warning: 'AI service temporarily unavailable, using heuristic fallback'
-    });
+  } catch (error) {
+    console.error('Server Error:', error);
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
