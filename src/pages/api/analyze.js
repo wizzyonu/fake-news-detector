@@ -1,5 +1,11 @@
 // src/pages/api/analyze.js
-import { getOnnxModel } from '../../../lib/onnxModel.js';
+// ONNX IS COMMENTED OUT - Pattern detection only (Works on Vercel!)
+
+// ============================================
+// ONNX IS DISABLED FOR VERCEL COMPATIBILITY
+// ============================================
+// import { getOnnxModel } from '../../../lib/onnxModel.js';
+// axios and cheerio ARE kept for URL scraping functionality
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
@@ -29,7 +35,7 @@ const ABSOLUTE_FAKE_INDICATORS = [
   { pattern: /PRE-TICKETED\s+BALLOT/i, weight: 45, critical: true },
   { pattern: /RIGGING\s+(PLAN|PLOT|SCHEME|ALLEGATIONS)/i, weight: 40, critical: true },
   
-  // DEATH HOAX - CRITICAL PATTERNS (ADDED)
+  // DEATH HOAX - CRITICAL PATTERNS
   { pattern: /(president|tinubu|buhari|gov|governor)\s+is\s+dead/i, weight: 60, critical: true },
   { pattern: /^.*(president|tinubu|buhari).{0,20}dead/i, weight: 55, critical: true },
   { pattern: /\b(DEAD|DIES|DIED)\b.*president/i, weight: 55, critical: true },
@@ -401,39 +407,13 @@ export default async function handler(req, res) {
     // Calculate pattern score
     const patternAnalysis = calculatePatternScore(textToAnalyze);
     
-    // Try ONNX model
-    let modelResult = null;
+    // ============================================
+    // ONNX MODEL IS COMPLETELY DISABLED
+    // Pattern detection only - works perfectly on Vercel!
+    // ============================================
     let finalVerdict = patternAnalysis.isFake ? 'FAKE' : 'REAL';
     let finalConfidence = patternAnalysis.isFake ? patternAnalysis.score : 100 - patternAnalysis.score;
-    let modelUsed = 'pattern-enhanced';
-    
-    try {
-      const model = await getOnnxModel();
-      if (model && model.isLoaded) {
-        modelUsed = 'hybrid-model-pattern';
-        modelResult = await model.predict(textToAnalyze);
-        
-        // Weighted combination
-        let patternWeight = 0.7;
-        if (patternAnalysis.criticalDetected || patternAnalysis.chainCount >= 2 || patternAnalysis.isDeathHoax) {
-          patternWeight = 0.85;
-        }
-        
-        const patternFakeScore = patternAnalysis.isFake ? patternAnalysis.score / 100 : (100 - patternAnalysis.score) / 100;
-        const modelFakeScore = modelResult.probabilities.fake;
-        
-        const combinedFakeScore = (patternFakeScore * patternWeight) + (modelFakeScore * (1 - patternWeight));
-        finalVerdict = combinedFakeScore > 0.5 ? 'FAKE' : 'REAL';
-        finalConfidence = Math.round(combinedFakeScore * 100);
-        
-        if ((patternAnalysis.criticalDetected || patternAnalysis.isDeathHoax) && finalConfidence < 85) {
-          finalConfidence = Math.min(95, finalConfidence + 15);
-        }
-      }
-    } catch (modelError) {
-      console.error('ONNX Model error:', modelError.message);
-      modelUsed = 'pattern-only';
-    }
+    let modelUsed = 'pattern-detection';
     
     // Special handling for death hoaxes (override anything else)
     if (/(president|tinubu|buhari|governor).{0,30}dead/i.test(textToAnalyze)) {
@@ -505,7 +485,6 @@ export default async function handler(req, res) {
         uppercaseRatio: patternAnalysis.uppercaseRatio,
         isDeathHoax: patternAnalysis.isDeathHoax
       },
-      textPreview: textToAnalyze.length > 200 ? textToAnalyze.substring(0, 200) + '...' : textToAnalyze,
       disclaimer: 'AI analysis based on Nigerian news patterns. Always verify with trusted sources like Premium Times, Punch, Vanguard, or official government channels.',
       tips: finalVerdict === 'FAKE' ? [
         '✓ Check if the news appears on verified Nigerian news websites',
@@ -518,14 +497,6 @@ export default async function handler(req, res) {
         '✓ Look for the original source of the information'
       ]
     };
-    
-    if (modelResult) {
-      response.probabilities = {
-        real: Math.round(modelResult.probabilities.real * 100),
-        fake: Math.round(modelResult.probabilities.fake * 100)
-      };
-      response.modelConfidence = modelResult.confidence;
-    }
     
     return res.status(200).json(response);
     
