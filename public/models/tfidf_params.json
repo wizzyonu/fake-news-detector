@@ -1,0 +1,13 @@
+{
+  "vocabulary_size": 5000,
+  "ngram_range": [
+    1,
+    2
+  ],
+  "max_features": 5000,
+  "use_idf": true,
+  "smooth_idf": true,
+  "sublinear_tf": true,
+  "stop_words": "english",
+  "vectorizer_file": "tfidf_vec_final_balanced.pkl"
+}

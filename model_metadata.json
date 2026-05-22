@@ -1,0 +1,8 @@
+{
+  "timestamp": "20260522_133926",
+  "accuracy": 0.9411764705882353,
+  "features": 5000,
+  "vocabulary_size": 5000,
+  "training_date": "2026-05-22T13:39:27.340959",
+  "model_type": "LogisticRegression"
+}

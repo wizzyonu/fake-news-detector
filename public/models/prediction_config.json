@@ -1,0 +1,265 @@
+{
+  "threshold": 0.5,
+  "intercept": -1.1475918719086509,
+  "total_features": 5000,
+  "fake_indicators": [
+    {
+      "word": "share",
+      "weight": 3.550105380364399
+    },
+    {
+      "word": "confirmed",
+      "weight": 2.2428689071027
+    },
+    {
+      "word": "groups",
+      "weight": 2.2006738448784864
+    },
+    {
+      "word": "immediately",
+      "weight": 2.0935248271901785
+    },
+    {
+      "word": "share groups",
+      "weight": 2.0573381615959168
+    },
+    {
+      "word": "forward",
+      "weight": 2.0007905694324397
+    },
+    {
+      "word": "forward immediately",
+      "weight": 2.0007905694324397
+    },
+    {
+      "word": "shocking",
+      "weight": 1.978644415627477
+    },
+    {
+      "word": "urgent",
+      "weight": 1.8949565508451462
+    },
+    {
+      "word": "urgent share",
+      "weight": 1.8949565508451462
+    },
+    {
+      "word": "don",
+      "weight": 1.8839614057073173
+    },
+    {
+      "word": "don ignore",
+      "weight": 1.8839614057073173
+    },
+    {
+      "word": "ignore",
+      "weight": 1.8839614057073173
+    },
+    {
+      "word": "believe",
+      "weight": 1.7757879978388407
+    },
+    {
+      "word": "won believe",
+      "weight": 1.7757879978388407
+    },
+    {
+      "word": "breaking news",
+      "weight": 1.762255930796136
+    },
+    {
+      "word": "won",
+      "weight": 1.743175124998012
+    },
+    {
+      "word": "read",
+      "weight": 1.6919163131965802
+    },
+    {
+      "word": "breaking",
+      "weight": 1.6553004060054197
+    },
+    {
+      "word": "read share",
+      "weight": 1.6420273467162905
+    },
+    {
+      "word": "news",
+      "weight": 1.6203271424559924
+    },
+    {
+      "word": "whatsapp",
+      "weight": 0.9497531389309911
+    },
+    {
+      "word": "immediately whatsapp",
+      "weight": 0.8102288346050652
+    },
+    {
+      "word": "share confirmed",
+      "weight": 0.8102288346050652
+    },
+    {
+      "word": "whatsapp groups",
+      "weight": 0.8102288346050652
+    },
+    {
+      "word": "inside",
+      "weight": 0.7599304401747542
+    },
+    {
+      "word": "final warning",
+      "weight": 0.7045229420959069
+    },
+    {
+      "word": "warning",
+      "weight": 0.7045229420959069
+    },
+    {
+      "word": "groups don",
+      "weight": 0.6841245056792468
+    },
+    {
+      "word": "news shocking",
+      "weight": 0.6841245056792468
+    },
+    {
+      "word": "special",
+      "weight": 0.632126953556275
+    },
+    {
+      "word": "final",
+      "weight": 0.544045113985529
+    },
+    {
+      "word": "confidential",
+      "weight": 0.5109896858066431
+    },
+    {
+      "word": "confidential sources",
+      "weight": 0.5109896858066431
+    },
+    {
+      "word": "sources confirm",
+      "weight": 0.5109896858066431
+    },
+    {
+      "word": "confirm",
+      "weight": 0.5003375495271964
+    },
+    {
+      "word": "communities children",
+      "weight": 0.4662668059742989
+    },
+    {
+      "word": "inside nigerian",
+      "weight": 0.4662668059742989
+    },
+    {
+      "word": "marriage",
+      "weight": 0.4662668059742989
+    },
+    {
+      "word": "nigerian communities",
+      "weight": 0.4662668059742989
+    },
+    {
+      "word": "report",
+      "weight": 0.44759090317730166
+    },
+    {
+      "word": "sources",
+      "weight": 0.4451010793585156
+    },
+    {
+      "word": "emergency meeting",
+      "weight": 0.4412720908245916
+    },
+    {
+      "word": "south africa",
+      "weight": 0.4321168310399229
+    },
+    {
+      "word": "shocking development",
+      "weight": 0.4227195365667096
+    },
+    {
+      "word": "documents reveal",
+      "weight": 0.4221843569315356
+    },
+    {
+      "word": "leaked",
+      "weight": 0.4221843569315356
+    },
+    {
+      "word": "leaked documents",
+      "weight": 0.4221843569315356
+    },
+    {
+      "word": "reveal",
+      "weight": 0.4221843569315356
+    },
+    {
+      "word": "documents",
+      "weight": 0.41224401782803893
+    }
+  ],
+  "real_indicators": [
+    {
+      "word": "apc",
+      "weight": -0.8041613027022663
+    },
+    {
+      "word": "police",
+      "weight": -0.63383904507652
+    },
+    {
+      "word": "court",
+      "weight": -0.6067298652294745
+    },
+    {
+      "word": "2027",
+      "weight": -0.6005141122078121
+    },
+    {
+      "word": "ticket",
+      "weight": -0.4501815127987512
+    },
+    {
+      "word": "ex",
+      "weight": -0.34592133404938663
+    },
+    {
+      "word": "fraud",
+      "weight": -0.3372247969006013
+    },
+    {
+      "word": "killed",
+      "weight": -0.33350621778793305
+    },
+    {
+      "word": "refinery",
+      "weight": -0.32176335758644303
+    },
+    {
+      "word": "primaries",
+      "weight": -0.314134566755012
+    },
+    {
+      "word": "alleged",
+      "weight": -0.3073600995386963
+    },
+    {
+      "word": "consensus",
+      "weight": -0.30412129036280255
+    },
+    {
+      "word": "wins",
+      "weight": -0.3035982209140965
+    },
+    {
+      "word": "kill",
+      "weight": -0.3015282532129912
+    }
+  ]
+}

@@ -2,7 +2,6 @@
   "name": "fake-news-detector",
   "version": "0.1.0",
   "private": true,
-  
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -18,6 +17,8 @@
     "cheerio": "^1.1.2",
     "express-rate-limit": "^8.2.1",
     "next": "16.1.1",
+    "onnxruntime-node": "^1.26.0",
+    "onnxruntime-web": "^1.26.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
