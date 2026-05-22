@@ -4,7 +4,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 // ============================================
-// ENHANCED NIGERIAN FAKE NEWS PATTERNS (UPDATED)
+// ENHANCED NIGERIAN FAKE NEWS PATTERNS (FULLY UPDATED)
 // ============================================
 
 // HIGHEST PRIORITY - Absolute fake indicators (these alone should trigger FAKE)
@@ -22,16 +22,33 @@ const ABSOLUTE_FAKE_INDICATORS = [
   { pattern: /CLAIM\s+YOURS\s+.*\s+BEFORE\s+ITS\s+REMOVED/i, weight: 40, critical: true },
   { pattern: /DON['']T\s+IGNORE\s+THIS\s+MESSAGE/i, weight: 40, critical: true },
   { pattern: /THIS\s+IS\s+NOT\s+A\s+JOKE/i, weight: 35, critical: true },
+  
+  // Political manipulation patterns
+  { pattern: /EXPOSED!!!+\s+(INEC|PDP|APC|TINUBU|ATIKU|BUHARI)/i, weight: 50, critical: true },
+  { pattern: /CAUGHT\s+(WITH|RED-HANDED|ON\s+CAMERA)/i, weight: 45, critical: true },
+  { pattern: /PRE-TICKETED\s+BALLOT/i, weight: 45, critical: true },
+  { pattern: /RIGGING\s+(PLAN|PLOT|SCHEME|ALLEGATIONS)/i, weight: 40, critical: true },
+  
+  // DEATH HOAX - CRITICAL PATTERNS (ADDED)
+  { pattern: /(president|tinubu|buhari|gov|governor)\s+is\s+dead/i, weight: 60, critical: true },
+  { pattern: /^.*(president|tinubu|buhari).{0,20}dead/i, weight: 55, critical: true },
+  { pattern: /\b(DEAD|DIES|DIED)\b.*president/i, weight: 55, critical: true },
+  { pattern: /president.*\bDEAD\b/i, weight: 60, critical: true },
 ];
 
 // Nigerian-specific fake news patterns
 const NIGERIAN_FAKE_PATTERNS = [
-  // Death hoax patterns
-  { pattern: /president.*dead|tinubu.*dead|buhari.*dead/i, weight: 40 },
-  { pattern: /dies suddenly|found dead|confirmed dead/i, weight: 35 },
-  { pattern: /killed in accident|dies in hospital/i, weight: 30 },
+  // ENHANCED DEATH HOAX PATTERNS
+  { pattern: /president\s+is\s+dead/i, weight: 60 },
+  { pattern: /tinubu\s+is\s+dead/i, weight: 60 },
+  { pattern: /buhari\s+is\s+dead/i, weight: 60 },
+  { pattern: /^.{0,50}(dead|dies|died).{0,50}$/i, weight: 45 },
+  { pattern: /\bDEAD\b.*president/i, weight: 55 },
+  { pattern: /president.*\bDEAD\b/i, weight: 55 },
+  { pattern: /dies suddenly|found dead|confirmed dead/i, weight: 40 },
+  { pattern: /killed in accident|dies in hospital/i, weight: 35 },
   
-  // Viral sharing prompts (INCREASED WEIGHTS)
+  // Viral sharing prompts
   { pattern: /SHARE\s+TO\s+ALL\s+GROUPS/i, weight: 40 },
   { pattern: /URGENT\s+SHARE\s+NOW/i, weight: 35 },
   { pattern: /FORWARD\s+IMMEDIATELY/i, weight: 35 },
@@ -48,6 +65,7 @@ const NIGERIAN_FAKE_PATTERNS = [
   { pattern: /BREAKING\s+NEWS.*!.*!/i, weight: 25 },
   { pattern: /CONFIRMED!!!+/i, weight: 25 },
   { pattern: /SHOCKING!!!+/i, weight: 25 },
+  { pattern: /EXPOSED!!!+/i, weight: 35 },
   { pattern: /[!]{4,}/, weight: 20 },
   { pattern: /[!]{3,}/, weight: 15 },
   
@@ -56,109 +74,142 @@ const NIGERIAN_FAKE_PATTERNS = [
   { pattern: /LAST\s+CHANCE/i, weight: 30 },
   { pattern: /EXPIRES\s+SOON/i, weight: 25 },
   
-  // Warning language
-  { pattern: /WARNING!!!+/i, weight: 25 },
-  { pattern: /ALERT!!!+/i, weight: 25 },
-  { pattern: /DANGER!!!+/i, weight: 25 },
+  // Political manipulation
+  { pattern: /CAUGHT\s+ON\s+CAMERA/i, weight: 35 },
+  { pattern: /BALLOT\s+BOX\s+(SNATCHING|STUFFING)/i, weight: 30 },
+  { pattern: /ELECTION\s+(FRAUD|MANIPULATION)/i, weight: 30 },
+  { pattern: /VOTE\s+(BUYING|SELLING)/i, weight: 25 },
 ];
 
 // Real news indicators (NEGATIVE weights - very specific patterns only)
 const REAL_NEWS_INDICATORS = [
-  // Verified Nigerian news sources (high confidence)
+  // Verified Nigerian news sources
   { pattern: /premium\s+times\s+reports?/i, weight: -30, source: true },
   { pattern: /punch\s+newspaper/i, weight: -30, source: true },
   { pattern: /vanguard\s+ng/i, weight: -25, source: true },
   { pattern: /guardian\.ng/i, weight: -25, source: true },
   { pattern: /according\s+to\s+(premium|punch|vanguard|guardian)/i, weight: -25, source: true },
   
-  // Official government communication
-  { pattern: /(cbn|ncdc|inec|ncc|npa|firs|nigerian\s+army)\s+(announced|confirmed|stated|said)/i, weight: -20 },
+  // Official government communication (SPECIFIC patterns only)
+  { pattern: /cbn\s+governor\s+(\w+)\s+(said|announced|confirmed)/i, weight: -20 },
+  { pattern: /ncdc\s+has\s+confirmed\s+\d+\s+new\s+cases/i, weight: -20 },
+  { pattern: /inec\s+spokesperson\s+(\w+)\s+(said|confirmed|announced)/i, weight: -25 },
   { pattern: /in\s+a\s+statement\s+(signed|issued)\s+by/i, weight: -20 },
   { pattern: /spokesperson\s+(\w+)\s+said/i, weight: -20 },
-  { pattern: /central\s+bank\s+of\s+nigeria/i, weight: -20 },
-  { pattern: /nigeria\s+centre\s+for\s+disease\s+control/i, weight: -20 },
   
   // Date-specific legitimate news
   { pattern: /(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},\s+202[4-5]/i, weight: -15 },
   
   // Official event markers
-  { pattern: /at\s+the\s+(presidential\s+villa|national\s+assembly|apec|state\s+house)/i, weight: -15 },
-  { pattern: /at\s+the\s+state\s+house\s+abuja/i, weight: -15 },
+  { pattern: /at\s+the\s+(presidential\s+villa|national\s+assembly|state\s+house)/i, weight: -15 },
   
-  // News structure indicators
+  // Professional journalistic language
   { pattern: /in\s+an\s+interview\s+with/i, weight: -15 },
   { pattern: /reports\s+that/i, weight: -12 },
   { pattern: /confirmed\s+to\s+([A-Z]+)\s+newspaper/i, weight: -15 },
+];
+
+// ============================================
+// DEATH HOAX DETECTION FUNCTION
+// ============================================
+
+function detectDeathHoax(text) {
+  const textLower = text.toLowerCase();
+  const textLength = text.length;
   
-  // Professional journalistic language
-  { pattern: /the\s+([A-Za-z]+)\s+learned\s+that/i, weight: -15 },
-  { pattern: /sources\s+close\s+to\s+the\s+matter\s+revealed/i, weight: -12 },
-];
+  // Death keywords
+  const deathKeywords = ['dead', 'dies', 'died', 'death', 'killed', 'assassinated'];
+  const hasDeathWord = deathKeywords.some(kw => textLower.includes(kw));
+  
+  if (!hasDeathWord) return { isDeathHoax: false, score: 0, reasons: [] };
+  
+  // Nigerian leaders
+  const leaders = ['tinubu', 'buhari', 'jonathan', 'obasanjo', 'president', 'gov', 'governor'];
+  const hasLeader = leaders.some(leader => textLower.includes(leader));
+  
+  let score = 0;
+  let reasons = [];
+  
+  // VERY SHORT text + death + leader = almost certainly fake
+  if (textLength < 100 && hasDeathWord && hasLeader) {
+    score = 75;
+    reasons.push("⚠️ Extremely short death announcement (typical hoax pattern)");
+  }
+  
+  // Direct "X is dead" pattern
+  if (/president\s+is\s+dead/i.test(text) || /tinubu\s+is\s+dead/i.test(text)) {
+    score = 85;
+    reasons.push("⚠️ Direct 'President is dead' claim - common Nigerian death hoax");
+  }
+  
+  // No source attribution
+  if (!/according to|reports|sources|confirmed|announced/i.test(text)) {
+    score += 15;
+    reasons.push("⚠️ No source attribution - suspicious for death news");
+  }
+  
+  // No official language
+  if (!/spokesperson|palace|aides|family|hospital/i.test(text)) {
+    score += 10;
+    reasons.push("⚠️ Lacks official confirmation language");
+  }
+  
+  // Check for ALL CAPS death (classic)
+  if (/DEAD|DIES|DIED/.test(text) && text === text.toUpperCase()) {
+    score += 20;
+    reasons.push("⚠️ ALL CAPS death announcement (viral hoax pattern)");
+  }
+  
+  return {
+    isDeathHoax: score > 50,
+    score: Math.min(score, 95),
+    reasons: reasons.slice(0, 3)
+  };
+}
 
-// High-priority fake patterns (legacy - kept for compatibility)
-const HIGH_PRIORITY_FAKE = [
-  /dead|dies?|died|death|killed|assassinated/i,
-  /resigns?|resignation|steps down|leaves office/i,
-  /arrested|detained|jailed|imprisoned/i,
-  /banned|prohibited|forbidden/i,
-];
-
-// Common fake patterns (legacy - kept for compatibility)
-const FAKE_PATTERNS = [
-  { pattern: /SHARE\s+TO\s+ALL\s+GROUPS/i, weight: 25 },
-  { pattern: /URGENT\s+SHARE\s+NOW/i, weight: 25 },
-  { pattern: /FORWARD\s+IMMEDIATELY/i, weight: 25 },
-  { pattern: /DON['']T\s+IGNORE\s+THIS/i, weight: 20 },
-  { pattern: /BREAKING\s+NEWS.*!.*!/i, weight: 20 },
-  { pattern: /CONFIRMED!!!+/i, weight: 20 },
-  { pattern: /SHOCKING!!!+/i, weight: 20 },
-  { pattern: /YOU\s+WON['']T\s+BELIEVE/i, weight: 20 },
-  { pattern: /[!]{3,}/, weight: 15 },
-  { pattern: /president.*dead/i, weight: 30 },
-  { pattern: /tinubu.*dead/i, weight: 30 },
-  { pattern: /dies suddenly|found dead/i, weight: 30 },
-  { pattern: /killed in accident|dies in hospital/i, weight: 25 },
-];
-
-// Real news indicators (legacy - kept for compatibility)
-const REAL_PATTERNS = [
-  { pattern: /premium\s+times/i, weight: -25 },
-  { pattern: /punch\s+ng/i, weight: -20 },
-  { pattern: /vanguard\s+ng/i, weight: -20 },
-  { pattern: /guardian\.ng/i, weight: -20 },
-  { pattern: /according\s+to\s+the\s+[A-Z]+/i, weight: -15 },
-  { pattern: /spokesperson\s+said/i, weight: -15 },
-  { pattern: /in an interview with/i, weight: -15 },
-  { pattern: /reports that/i, weight: -10 },
-  { pattern: /confirmed to [A-Z]+/i, weight: -15 },
-];
+// ============================================
+// MAIN PATTERN SCORE CALCULATION
+// ============================================
 
 function calculatePatternScore(text) {
-  let fakeScore = 0;
+  // STEP 1: Death hoax detection (highest priority)
+  const deathHoaxAnalysis = detectDeathHoax(text);
+  
+  let fakeScore = deathHoaxAnalysis.score;
   let realScore = 0;
-  let reason = [];
-  let criticalFakeDetected = false;
+  let reason = [...deathHoaxAnalysis.reasons];
+  let criticalFakeDetected = deathHoaxAnalysis.isDeathHoax;
   let chainCount = 0;
   
-  // STEP 1: Check ABSOLUTE fake indicators first (these override everything)
+  // If death hoax detected, set minimum score
+  if (deathHoaxAnalysis.isDeathHoax) {
+    fakeScore = Math.max(fakeScore, 70);
+    if (!reason.includes("🚨 DEATH HOAX DETECTED")) {
+      reason.unshift("🚨 DEATH HOAX DETECTED");
+    }
+  }
+  
+  // STEP 2: Check ABSOLUTE fake indicators
   for (const { pattern, weight, critical } of ABSOLUTE_FAKE_INDICATORS) {
     if (pattern.test(text)) {
       fakeScore += weight;
       criticalFakeDetected = true;
-      reason.push(`🚨 CRITICAL: ${pattern.source.slice(0, 50)}... detected`);
-      break; // Once we find a critical pattern, stop checking others
+      if (!reason.some(r => r.includes(pattern.source.slice(0, 30)))) {
+        reason.push(`🚨 CRITICAL: ${pattern.source.slice(0, 50)}... detected`);
+      }
+      break;
     }
   }
   
-  // STEP 2: If critical fake detected, boost score significantly
+  // STEP 3: Boost for critical patterns
   if (criticalFakeDetected) {
-    fakeScore += 30; // Boost to ensure FAKE classification
-    if (!reason.includes("⚠️ Contains classic WhatsApp scam patterns")) {
-      reason.push("⚠️ Contains classic WhatsApp scam patterns");
+    fakeScore += 30;
+    if (!reason.includes("⚠️ Contains classic scam patterns")) {
+      reason.push("⚠️ Contains classic scam patterns");
     }
   }
   
-  // STEP 3: Check Nigerian-specific fake patterns
+  // STEP 4: Check Nigerian-specific fake patterns
   for (const { pattern, weight } of NIGERIAN_FAKE_PATTERNS) {
     if (pattern.test(text)) {
       const matches = (text.match(pattern) || []).length;
@@ -171,15 +222,10 @@ function calculatePatternScore(text) {
     }
   }
   
-  // STEP 4: Check for WhatsApp chain message structure
+  // STEP 5: WhatsApp chain detection
   const whatsappChainIndicators = [
-    /SHARE.*GROUPS/i,
-    /WITHIN.*MINUTES/i,
-    /FAILURE.*SHARE/i,
-    /FORWARD.*NOW/i,
-    /SEND.*CONTACTS/i,
-    /SHARE.*THIS.*MESSAGE/i,
-    /PLEASE.*FORWARD/i,
+    /SHARE.*GROUPS/i, /WITHIN.*MINUTES/i, /FAILURE.*SHARE/i,
+    /FORWARD.*NOW/i, /SEND.*CONTACTS/i, /SHARE.*THIS.*MESSAGE/i
   ];
   
   for (const pattern of whatsappChainIndicators) {
@@ -191,7 +237,7 @@ function calculatePatternScore(text) {
     reason.push(`⚠️ WhatsApp chain message pattern detected (${chainCount} indicators)`);
   }
   
-  // STEP 5: Check for excessive formatting (caps + exclamations)
+  // STEP 6: Check formatting (caps + exclamations)
   const uppercaseChars = (text.match(/[A-Z]/g) || []).length;
   const exclamationCount = (text.match(/!/g) || []).length;
   const totalLength = text.length;
@@ -211,67 +257,61 @@ function calculatePatternScore(text) {
     }
   }
   
-  // STEP 6: Check for REAL news indicators (very specific patterns only)
+  // STEP 7: Check REAL news indicators
   for (const { pattern, weight, source } of REAL_NEWS_INDICATORS) {
     if (pattern.test(text)) {
       realScore += Math.abs(weight);
-      
-      // Only add reason for source-based indicators
       if (source && !reason.some(r => r.includes('Verified source'))) {
         reason.push(`✅ Verified source pattern detected`);
       }
     }
   }
   
-  // STEP 7: Check for professional news language
-  const professionalMarkers = [
-    /\b(according to|reports indicate|sources confirm)\b/i,
-    /\b(interview|conference|briefing|press release)\b/i,
-    /\b(statement|announcement|declaration)\b\s+(issued|released|made available)/i,
-  ];
-  
-  for (const marker of professionalMarkers) {
-    if (marker.test(text)) {
-      realScore += 10;
-    }
-  }
-  
-  // STEP 8: Calculate final score with strong bias against FAKE for WhatsApp scams
+  // STEP 8: Calculate final score with forced minimums
   let totalScore = fakeScore - realScore;
   
-  // If it's a WhatsApp chain message, force higher score
+  // Force high scores for certain patterns
   if (chainCount >= 3 || criticalFakeDetected) {
-    totalScore = Math.max(totalScore, 70); // Minimum 70% fake for chain messages
+    totalScore = Math.max(totalScore, 70);
   }
   
-  // Special case: Palliative scams
   if (/₦\d{4,6}\s+PALLIATIVE/i.test(text) && chainCount >= 2) {
-    totalScore = Math.max(totalScore, 85); // Force high fake score for palliative scams
+    totalScore = Math.max(totalScore, 85);
   }
   
-  // Death hoax bonus
-  if (/(president|tinubu|buhari).*dead/i.test(text) && exclamationCount > 2) {
+  if (/(president|tinubu|buhari).{0,30}dead/i.test(text)) {
     totalScore = Math.max(totalScore, 80);
   }
   
-  // Clamp to 0-100 range
+  if (/EXPOSED|CAUGHT|RIGGING|PRE-TICKETED/i.test(text)) {
+    totalScore = Math.max(totalScore, 75);
+  }
+  
+  // Death hoax special handling
+  if (deathHoaxAnalysis.isDeathHoax) {
+    totalScore = Math.max(totalScore, 85);
+  }
+  
+  // Clamp to 0-100
   totalScore = Math.min(95, Math.max(5, totalScore));
   
-  // Normalize
-  const normalizedScore = Math.round(totalScore);
-  
   return {
-    score: normalizedScore,
-    isFake: normalizedScore > 50,
+    score: Math.round(totalScore),
+    isFake: totalScore > 50,
     fakeScore: Math.round(fakeScore),
     realScore: Math.round(realScore),
-    reason: reason.slice(0, 4), // Top 4 reasons
+    reason: reason.slice(0, 5),
     criticalDetected: criticalFakeDetected,
     chainCount: chainCount,
     exclamationCount: exclamationCount,
-    uppercaseRatio: Math.round((uppercaseChars / totalLength) * 100) || 0
+    uppercaseRatio: Math.round((uppercaseChars / totalLength) * 100) || 0,
+    isDeathHoax: deathHoaxAnalysis.isDeathHoax
   };
 }
+
+// ============================================
+// URL DETECTION AND SCRAPING
+// ============================================
 
 function isUrl(text) {
   return /^https?:\/\//i.test(text);
@@ -326,6 +366,10 @@ async function scrapeArticleText(url) {
   }
 }
 
+// ============================================
+// MAIN API HANDLER
+// ============================================
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -354,10 +398,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Text too short (minimum 20 characters)' });
     }
     
-    // Calculate pattern score (primary detection)
+    // Calculate pattern score
     const patternAnalysis = calculatePatternScore(textToAnalyze);
     
-    // Try ONNX model if available (optional)
+    // Try ONNX model
     let modelResult = null;
     let finalVerdict = patternAnalysis.isFake ? 'FAKE' : 'REAL';
     let finalConfidence = patternAnalysis.isFake ? patternAnalysis.score : 100 - patternAnalysis.score;
@@ -369,50 +413,59 @@ export default async function handler(req, res) {
         modelUsed = 'hybrid-model-pattern';
         modelResult = await model.predict(textToAnalyze);
         
-        // Weighted combination: 70% pattern, 30% model (pattern takes precedence for Nigerian scams)
-        const patternWeight = 0.7;
-        const modelWeight = 0.3;
+        // Weighted combination
+        let patternWeight = 0.7;
+        if (patternAnalysis.criticalDetected || patternAnalysis.chainCount >= 2 || patternAnalysis.isDeathHoax) {
+          patternWeight = 0.85;
+        }
         
         const patternFakeScore = patternAnalysis.isFake ? patternAnalysis.score / 100 : (100 - patternAnalysis.score) / 100;
         const modelFakeScore = modelResult.probabilities.fake;
         
-        // If critical patterns detected, give pattern even more weight
-        let finalPatternWeight = patternWeight;
-        if (patternAnalysis.criticalDetected || patternAnalysis.chainCount >= 2) {
-          finalPatternWeight = 0.85; // 85% pattern, 15% model for clear scams
-        }
-        
-        const combinedFakeScore = (patternFakeScore * finalPatternWeight) + (modelFakeScore * (1 - finalPatternWeight));
+        const combinedFakeScore = (patternFakeScore * patternWeight) + (modelFakeScore * (1 - patternWeight));
         finalVerdict = combinedFakeScore > 0.5 ? 'FAKE' : 'REAL';
         finalConfidence = Math.round(combinedFakeScore * 100);
         
-        // Boost confidence for clear scam patterns
-        if (patternAnalysis.criticalDetected && finalConfidence < 85) {
+        if ((patternAnalysis.criticalDetected || patternAnalysis.isDeathHoax) && finalConfidence < 85) {
           finalConfidence = Math.min(95, finalConfidence + 15);
         }
       }
     } catch (modelError) {
       console.error('ONNX Model error:', modelError.message);
-      // Fall back to pattern-only detection
       modelUsed = 'pattern-only';
     }
     
-    // Generate detailed explanation
+    // Special handling for death hoaxes (override anything else)
+    if (/(president|tinubu|buhari|governor).{0,30}dead/i.test(textToAnalyze)) {
+      finalVerdict = 'FAKE';
+      finalConfidence = Math.max(finalConfidence, 88);
+    }
+    
+    // Handle low confidence edge cases
+    if (finalConfidence >= 45 && finalConfidence <= 55) {
+      if (/EXPOSED|CAUGHT|RIGGING|PRE-TICKETED/i.test(textToAnalyze)) {
+        finalVerdict = 'FAKE';
+        finalConfidence = Math.max(finalConfidence, 75);
+      }
+    }
+    
+    // Generate explanation
     let explanation = '';
     if (finalVerdict === 'FAKE') {
-      if (patternAnalysis.criticalDetected) {
-        explanation = '⚠️ This contains classic WhatsApp scam patterns. ';
+      if (patternAnalysis.isDeathHoax) {
+        explanation = '🚨 DEATH HOAX DETECTED: This appears to be a false death announcement. ';
+      } else if (patternAnalysis.criticalDetected) {
+        explanation = '⚠️ This contains classic scam patterns. ';
       } else if (patternAnalysis.chainCount >= 2) {
         explanation = '⚠️ This appears to be a WhatsApp chain message. ';
       }
       
       if (patternAnalysis.reason.length > 0) {
-        explanation += patternAnalysis.reason.join(' ').replace(/⚠️/g, '').trim() + ' ';
+        explanation += patternAnalysis.reason.join(' ').replace(/⚠️|🚨/g, '').trim() + ' ';
       } else {
         explanation += 'This content matches patterns commonly found in Nigerian fake news. ';
       }
       
-      // Add specific guidance
       if (/palliative|grant|money|payment/i.test(textToAnalyze)) {
         explanation += 'Financial scams promising money are common. Government palliatives are NEVER distributed via WhatsApp forwards. ';
       }
@@ -427,15 +480,13 @@ export default async function handler(req, res) {
       if (patternAnalysis.realScore > 0) {
         explanation += 'Verified source patterns detected. ';
       }
-      explanation += 'Always cross-reference with trusted Nigerian news sources like Premium Times, Punch, or Vanguard.';
+      explanation += 'Always cross-reference with trusted Nigerian news sources.';
     }
     
-    // Determine confidence level
     let confidenceLevel = 'LOW';
     if (finalConfidence >= 80) confidenceLevel = 'HIGH';
     else if (finalConfidence >= 60) confidenceLevel = 'MEDIUM';
     
-    // Prepare response
     const response = {
       classification: finalVerdict,
       confidence: finalConfidence,
@@ -451,7 +502,8 @@ export default async function handler(req, res) {
         criticalDetected: patternAnalysis.criticalDetected,
         chainCount: patternAnalysis.chainCount,
         exclamationCount: patternAnalysis.exclamationCount,
-        uppercaseRatio: patternAnalysis.uppercaseRatio
+        uppercaseRatio: patternAnalysis.uppercaseRatio,
+        isDeathHoax: patternAnalysis.isDeathHoax
       },
       textPreview: textToAnalyze.length > 200 ? textToAnalyze.substring(0, 200) + '...' : textToAnalyze,
       disclaimer: 'AI analysis based on Nigerian news patterns. Always verify with trusted sources like Premium Times, Punch, Vanguard, or official government channels.',
@@ -467,7 +519,6 @@ export default async function handler(req, res) {
       ]
     };
     
-    // Add model results if available
     if (modelResult) {
       response.probabilities = {
         real: Math.round(modelResult.probabilities.real * 100),
