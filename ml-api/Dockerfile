@@ -13,7 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY *.pkl ./
 COPY *.py ./
 
+# Run the fix script to re-save vectorizers
+RUN python fix_on_render.py
+
 EXPOSE 10000
 
-# Use the start script instead of direct gunicorn
-CMD ["gunicorn", "--timeout", "120", "--workers", "2", "--bind", "0.0.0.0:10000", "start:app"]
+CMD ["gunicorn", "--timeout", "120", "--workers", "2", "--bind", "0.0.0.0:10000", "ml_api:app"]
