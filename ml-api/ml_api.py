@@ -1,8 +1,18 @@
 import sys
+import numpy as np
+
+# ============================================
+# NUMPY COMPATIBILITY PATCH FOR RENDER
+# ============================================
+if not hasattr(np, '_core'):
+    import numpy.core as _ns
+    sys.modules['numpy._core'] = _ns
+    np._core = _ns
+    print("✅ Patched numpy._core = numpy.core for older numpy versions")
+
 import os
 import pickle
 import joblib
-import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
