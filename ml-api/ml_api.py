@@ -85,11 +85,14 @@ def load_models_with_vectorizers():
     print("\nInside load_models_with_vectorizers function")
     
     # ============================================
-    # UPDATE THESE PAIRS - Simplified version
+    # UPDATE THESE PAIRS - All loaded models
     # ============================================
     pairs = [
-        ('model_b_final_balanced.pkl', 'tfidf_vectorizer.pkl'),  # Random Forest
-        ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),          # Logistic Regression
+        ('model_b_balanced.pkl', 'tfidf_vec_balanced.pkl'),
+        ('model_b_final_balanced.pkl', 'tfidf_vec_final_balanced.pkl'),
+        ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),
+        ('model_b_multi_source.pkl', 'tfidf_vec_multi_source.pkl'),
+        ('model_latest.pkl', 'tfidf_vec_latest.pkl'),
     ]
     
     print(f"Will try to load {len(pairs)} model pairs")
