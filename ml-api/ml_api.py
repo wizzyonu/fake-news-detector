@@ -376,10 +376,28 @@ def debug_predict():
             'model_status': step_2
         })
         
+    # Inspect attributes of the first vectorizer for debugging
+    inspection_info = {}
+    if MODEL_VECTORIZER_PAIRS:
+        try:
+            first_pair = MODEL_VECTORIZER_PAIRS[0]
+            vec = first_pair['vectorizer']
+            inspection_info['vectorizer_class'] = str(type(vec).__name__)
+            inspection_info['vectorizer_dict_keys'] = list(getattr(vec, '__dict__', {}).keys())
+            if hasattr(vec, '_tfidf'):
+                _tfidf = vec._tfidf
+                inspection_info['tfidf_class'] = str(type(_tfidf).__name__)
+                inspection_info['tfidf_dict_keys'] = list(getattr(_tfidf, '__dict__', {}).keys())
+                for key in ['_idf_diag', 'idf_', '_idf']:
+                    inspection_info[f'has_{key}'] = hasattr(_tfidf, key)
+        except Exception as e:
+            inspection_info['error'] = f"Inspection failed: {e}"
+        
     return jsonify({
         'text_tested': text,
         'models_count': len(MODEL_VECTORIZER_PAIRS),
-        'debug_info': debug_info
+        'debug_info': debug_info,
+        'inspection_info': inspection_info
     })
 
 @app.route('/predict', methods=['POST'])
