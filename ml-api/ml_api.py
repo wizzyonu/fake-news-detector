@@ -1,16 +1,5 @@
 import sys
 import os
-
-# Fix for numpy 2.x vs 1.x compatibility
-# This creates the _core module that numpy 2.x expects but numpy 1.x doesn't have
-try:
-    import numpy as np
-    if not hasattr(np, '_core'):
-        np._core = np.core
-except:
-    pass
-
-# Now continue with normal imports
 import pickle
 import joblib
 import numpy as np
@@ -22,6 +11,7 @@ import re
 import warnings
 warnings.filterwarnings('ignore')
 
+# Rest of your code remains the same...
 # ============================================
 # STARTUP DEBUG - Check files at runtime
 # ============================================
