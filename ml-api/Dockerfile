@@ -8,17 +8,21 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy everything first (including .pkl files)
-COPY . .
-
-# Verify files are copied
-RUN echo "=== Checking for .pkl files ===" && \
-    ls -la *.pkl 2>/dev/null || echo "No .pkl files found in root" && \
-    echo "=== All files ===" && \
-    ls -la
-
-# Install dependencies
+# Copy requirements first (for better caching)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy ALL Python files
+COPY *.py ./
+
+# Copy ALL .pkl files (models and vectorizers)
+COPY *.pkl ./
+
+# Debug: List files to verify they were copied
+RUN echo "=== Verifying .pkl files in /app ===" && \
+    ls -la *.pkl && \
+    echo "=== Total files in /app ===" && \
+    ls -la
 
 EXPOSE 10000
 

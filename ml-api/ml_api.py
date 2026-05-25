@@ -1,4 +1,15 @@
 import os
+
+import sys
+
+print("=" * 60)
+print("STARTUP DEBUG - Checking for model files")
+print("=" * 60)
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in directory: {os.listdir('.')}")
+print(f"Python path: {sys.path}")
+print("=" * 60)
+
 import pickle
 import joblib
 import numpy as np
