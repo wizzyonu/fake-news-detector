@@ -2,5 +2,8 @@ __pycache__
 *.pyc
 .venv
 venv
-*.log
 .git
+.gitignore
+README.md
+.vscode
+*.md
