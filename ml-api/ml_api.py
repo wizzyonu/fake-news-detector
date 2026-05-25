@@ -11,7 +11,6 @@ import re
 import warnings
 warnings.filterwarnings('ignore')
 
-# Rest of your code remains the same...
 # ============================================
 # STARTUP DEBUG - Check files at runtime
 # ============================================
@@ -47,7 +46,7 @@ ABSOLUTE_FAKE_INDICATORS = [
 ]
 
 # ============================================
-# MODEL LOADING WITH FIXES
+# MODEL LOADING - UPDATE THE PAIRS HERE
 # ============================================
 
 def load_models_with_vectorizers():
@@ -56,13 +55,17 @@ def load_models_with_vectorizers():
     
     print("\nInside load_models_with_vectorizers function")
     
-    # Define model-vectorizer pairs
+    # ============================================
+    # UPDATE THESE PAIRS - This is where you put your retrained models
+    # ============================================
     pairs = [
-        ('model_b_balanced.pkl', 'tfidf_vec_balanced.pkl'),
-        ('model_b_final_balanced.pkl', 'tfidf_vec_final_balanced.pkl'),
-        ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),
-        ('model_b_multi_source.pkl', 'tfidf_vec_multi_source.pkl'),
-        ('model_latest.pkl', 'tfidf_vec_latest.pkl'),
+        # For retrained models (use the same vectorizer for all)
+        ('model_b_final_balanced.pkl', 'tfidf_vectorizer.pkl'),  # Random Forest
+        ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),          # Logistic Regression
+        
+        # If you have more retrained models, add them here:
+        # ('model_rf_retrained.pkl', 'tfidf_vectorizer.pkl'),
+        # ('model_lr_retrained.pkl', 'tfidf_vectorizer.pkl'),
     ]
     
     print(f"Will try to load {len(pairs)} model pairs")
@@ -97,7 +100,7 @@ def load_models_with_vectorizers():
                 print(f"    ❌ File does not exist!")
                 continue
             
-            # Load vectorizer with special handling for numpy version
+            # Load vectorizer
             print(f"  Loading {vec_file}...")
             vectorizer = None
             
@@ -115,24 +118,7 @@ def load_models_with_vectorizers():
                         print(f"    ✅ Loaded with joblib")
                     except Exception as e2:
                         print(f"    Joblib failed: {e2}")
-                        
-                        # Last resort: try loading with explicit protocol handling
-                        try:
-                            import io
-                            with open(vec_file, 'rb') as f:
-                                # Try reading as bytes and loading with different protocol
-                                data_bytes = f.read()
-                                # Try different pickle protocols
-                                for protocol in [2, 3, 4, 5]:
-                                    try:
-                                        vectorizer = pickle.loads(data_bytes)
-                                        print(f"    ✅ Loaded with pickle protocol {protocol}")
-                                        break
-                                    except:
-                                        continue
-                        except Exception as e3:
-                            print(f"    All loading methods failed: {e3}")
-                            continue
+                        continue
             else:
                 print(f"    ❌ Vectorizer file does not exist!")
                 continue
