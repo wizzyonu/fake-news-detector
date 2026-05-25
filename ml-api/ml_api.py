@@ -1,15 +1,5 @@
 import sys
 import numpy as np
-
-# ============================================
-# NUMPY COMPATIBILITY PATCH FOR RENDER
-# ============================================
-if not hasattr(np, '_core'):
-    import numpy.core as _ns
-    sys.modules['numpy._core'] = _ns
-    np._core = _ns
-    print("✅ Patched numpy._core = numpy.core for older numpy versions")
-
 import os
 import pickle
 import joblib
@@ -20,6 +10,35 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 import warnings
 warnings.filterwarnings('ignore')
+
+# ============================================
+# NUMPY COMPATIBILITY PATCH FOR RENDER
+# ============================================
+if not hasattr(np, '_core'):
+    import numpy.core as _ns
+    sys.modules['numpy._core'] = _ns
+    np._core = _ns
+    
+    # Map key submodules that pickle/joblib will look for
+    try:
+        import numpy.core.multiarray as _multiarray
+        sys.modules['numpy._core.multiarray'] = _multiarray
+    except Exception as e:
+        print(f"⚠️ Could not map numpy._core.multiarray: {e}")
+        
+    try:
+        import numpy.core.umath as _umath
+        sys.modules['numpy._core.umath'] = _umath
+    except Exception as e:
+        print(f"⚠️ Could not map numpy._core.umath: {e}")
+        
+    try:
+        import numpy.core.numeric as _numeric
+        sys.modules['numpy._core.numeric'] = _numeric
+    except Exception as e:
+        print(f"⚠️ Could not map numpy._core.numeric: {e}")
+        
+    print("✅ Patched numpy._core submodules for model loading compatibility")
 
 # ============================================
 # STARTUP DEBUG - Check files at runtime
