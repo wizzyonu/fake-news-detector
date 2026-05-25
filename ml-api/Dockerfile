@@ -8,16 +8,18 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for better caching)
-COPY requirements.txt .
+# Copy everything first (including .pkl files)
+COPY . .
+
+# Verify files are copied
+RUN echo "=== Checking for .pkl files ===" && \
+    ls -la *.pkl 2>/dev/null || echo "No .pkl files found in root" && \
+    echo "=== All files ===" && \
+    ls -la
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy ALL files including .pkl models
-COPY *.pkl ./
-COPY *.py ./
+EXPOSE 10000
 
-# Expose port
-EXPOSE 8080
-
-# Run the app
-CMD ["gunicorn", "--timeout", "120", "--workers", "2", "--bind", "0.0.0.0:8080", "ml_api:app"]
+CMD ["gunicorn", "--timeout", "120", "--workers", "2", "--bind", "0.0.0.0:10000", "ml_api:app"]
