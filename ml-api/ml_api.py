@@ -1,15 +1,5 @@
 import os
-
 import sys
-
-print("=" * 60)
-print("STARTUP DEBUG - Checking for model files")
-print("=" * 60)
-print(f"Current working directory: {os.getcwd()}")
-print(f"Files in directory: {os.listdir('.')}")
-print(f"Python path: {sys.path}")
-print("=" * 60)
-
 import pickle
 import joblib
 import numpy as np
@@ -20,6 +10,17 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 import warnings
 warnings.filterwarnings('ignore')
+
+# ============================================
+# STARTUP DEBUG - Check files at runtime
+# ============================================
+print("=" * 60)
+print("STARTUP DEBUG - Checking for model files")
+print("=" * 60)
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in directory: {os.listdir('.')}")
+print(f"Python path: {sys.path}")
+print("=" * 60)
 
 app = Flask(__name__)
 CORS(app)
@@ -39,32 +40,18 @@ ABSOLUTE_FAKE_INDICATORS = [
     (r'(president|tinubu|buhari|gov|governor)\s+is\s+dead', 60),
 ]
 
-def load_file(filepath):
-    """Try multiple methods to load a pickle/joblib file"""
-    # Try joblib first (more robust)
-    try:
-        return joblib.load(filepath)
-    except:
-        pass
-    
-    # Try pickle with different protocols
-    for protocol in [None, 2, 3, 4, 5]:
-        try:
-            with open(filepath, 'rb') as f:
-                if protocol is None:
-                    return pickle.load(f)
-                else:
-                    return pickle.loads(f.read())
-        except:
-            continue
-    
-    return None
+# ============================================
+# MODEL LOADING WITH DEBUG
+# ============================================
+print("\nStarting model loading function...")
 
 def load_models_with_vectorizers():
     """Load each model with its matching vectorizer"""
     global MODEL_VECTORIZER_PAIRS
     
-    # Define model-vectorizer pairs based on filenames
+    print("Inside load_models_with_vectorizers function")
+    
+    # Define model-vectorizer pairs
     pairs = [
         ('model_b_balanced.pkl', 'tfidf_vec_balanced.pkl'),
         ('model_b_final_balanced.pkl', 'tfidf_vec_final_balanced.pkl'),
@@ -73,30 +60,95 @@ def load_models_with_vectorizers():
         ('model_latest.pkl', 'tfidf_vec_latest.pkl'),
     ]
     
+    print(f"Will try to load {len(pairs)} model pairs")
+    
     for model_file, vec_file in pairs:
         try:
-            print(f"Loading {model_file}...")
-            model = load_file(model_file)
+            print(f"\n--- Processing pair: {model_file} + {vec_file} ---")
             
-            print(f"Loading {vec_file}...")
-            vectorizer = load_file(vec_file)
+            # Load model
+            print(f"  Loading {model_file}...")
+            model = None
             
+            if os.path.exists(model_file):
+                file_size = os.path.getsize(model_file)
+                print(f"    File exists, size: {file_size} bytes")
+                
+                # Try pickle first
+                try:
+                    with open(model_file, 'rb') as f:
+                        model = pickle.load(f)
+                    print(f"    ✅ Loaded with pickle")
+                except Exception as pickle_error:
+                    print(f"    Pickle failed: {pickle_error}")
+                    # Try joblib
+                    try:
+                        model = joblib.load(model_file)
+                        print(f"    ✅ Loaded with joblib")
+                    except Exception as joblib_error:
+                        print(f"    Joblib also failed: {joblib_error}")
+                        continue
+            else:
+                print(f"    ❌ File does not exist!")
+                continue
+            
+            # Load vectorizer
+            print(f"  Loading {vec_file}...")
+            vectorizer = None
+            
+            if os.path.exists(vec_file):
+                try:
+                    with open(vec_file, 'rb') as f:
+                        vectorizer = pickle.load(f)
+                    print(f"    ✅ Loaded with pickle")
+                except Exception as pickle_error:
+                    try:
+                        vectorizer = joblib.load(vec_file)
+                        print(f"    ✅ Loaded with joblib")
+                    except Exception as joblib_error:
+                        print(f"    Failed to load vectorizer: {joblib_error}")
+                        continue
+            else:
+                print(f"    ❌ Vectorizer file does not exist!")
+                continue
+            
+            # Verify both loaded correctly
             if model is not None and vectorizer is not None:
-                if hasattr(model, 'predict') and hasattr(vectorizer, 'transform'):
+                has_predict = hasattr(model, 'predict')
+                has_transform = hasattr(vectorizer, 'transform')
+                
+                if has_predict and has_transform:
                     MODEL_VECTORIZER_PAIRS.append({
                         'name': model_file.replace('.pkl', ''),
                         'model': model,
                         'vectorizer': vectorizer
                     })
-                    print(f"✅ Loaded pair: {model_file} + {vec_file}")
+                    print(f"  ✅ Successfully added pair: {model_file}")
+                    print(f"     Model type: {type(model).__name__}")
+                    print(f"     Vectorizer type: {type(vectorizer).__name__}")
                 else:
-                    print(f"❌ Invalid objects: model has predict={hasattr(model, 'predict')}, vectorizer has transform={hasattr(vectorizer, 'transform')}")
+                    print(f"  ❌ Invalid objects: predict={has_predict}, transform={has_transform}")
             else:
-                print(f"❌ Failed to load: model={model is not None}, vectorizer={vectorizer is not None}")
+                print(f"  ❌ Failed to load: model={model is not None}, vectorizer={vectorizer is not None}")
+                
         except Exception as e:
-            print(f"❌ Error loading pair {model_file}: {e}")
+            print(f"  ❌ Exception loading pair {model_file}: {e}")
+            import traceback
+            traceback.print_exc()
     
+    print(f"\n{'='*50}")
+    print(f"LOADING COMPLETE: {len(MODEL_VECTORIZER_PAIRS)} pairs loaded")
+    print(f"{'='*50}")
     return len(MODEL_VECTORIZER_PAIRS) > 0
+
+# Call the loader immediately
+print("\nCalling load_models_with_vectorizers...")
+load_models_with_vectorizers()
+print(f"After loading, MODEL_VECTORIZER_PAIRS length: {len(MODEL_VECTORIZER_PAIRS)}")
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
 
 def get_ensemble_prediction(text):
     """Get predictions from all model-vectorizer pairs"""
@@ -124,7 +176,6 @@ def get_ensemble_prediction(text):
             if hasattr(pair['model'], 'classes_'):
                 classes = pair['model'].classes_
                 if len(classes) == 2:
-                    # Convert to string for comparison
                     class_str = str(classes[0]).upper()
                     if class_str in ['FAKE', '1', 'FALSE']:
                         is_fake = bool(pred == classes[0])
@@ -213,6 +264,10 @@ def calculate_pattern_score(text):
     total = fake_score - real_score
     return min(95, max(5, total))
 
+# ============================================
+# API ENDPOINTS
+# ============================================
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
@@ -220,6 +275,34 @@ def health():
         'models_loaded': len(MODEL_VECTORIZER_PAIRS),
         'models_list': [p['name'] for p in MODEL_VECTORIZER_PAIRS]
     })
+
+@app.route('/debug-models', methods=['GET'])
+def debug_models():
+    """Debug endpoint to check model loading"""
+    result = {
+        'cwd': os.getcwd(),
+        'files': os.listdir('.'),
+        'pkl_files': [f for f in os.listdir('.') if f.endswith('.pkl')],
+        'models_loaded': len(MODEL_VECTORIZER_PAIRS),
+        'model_names': [p['name'] for p in MODEL_VECTORIZER_PAIRS]
+    }
+    
+    # Try to load one model manually
+    test_result = {}
+    try:
+        with open('model_b_balanced.pkl', 'rb') as f:
+            test_model = pickle.load(f)
+            test_result['model_b_balanced'] = {
+                'success': True,
+                'type': str(type(test_model)),
+                'has_predict': hasattr(test_model, 'predict')
+            }
+    except Exception as e:
+        test_result['model_b_balanced'] = {'success': False, 'error': str(e)}
+    
+    result['test_load'] = test_result
+    
+    return jsonify(result)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -289,7 +372,6 @@ def model_info():
             'model_type': str(type(model).__name__),
             'has_predict_proba': hasattr(model, 'predict_proba'),
             'vectorizer_type': str(type(vectorizer).__name__),
-            'feature_count': len(vectorizer.get_feature_names_out()) if hasattr(vectorizer, 'get_feature_names_out') else 'unknown'
         }
     return jsonify({
         'models': info,
@@ -298,17 +380,6 @@ def model_info():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("Loading ML models with their vectorizers...")
-    print("=" * 50)
-    
-    if load_models_with_vectorizers():
-        print(f"\n✅ Loaded {len(MODEL_VECTORIZER_PAIRS)} model-vectorizer pairs")
-        for pair in MODEL_VECTORIZER_PAIRS:
-            print(f"   - {pair['name']}")
-    else:
-        print("\n⚠️ No models loaded. Will fall back to pattern detection.")
-    
-    print("\n" + "=" * 50)
     print("Starting Flask API server...")
     print("=" * 50)
     
