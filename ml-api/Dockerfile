@@ -11,16 +11,18 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy datasets and training script
-COPY *.csv ./
-COPY train_on_render.py .
+# Copy everything
+COPY . .
 
-# Train models during build (THIS CREATES COMPATIBLE MODELS)
-RUN python train_on_render.py
+# RUN THE TRAINING SCRIPT TO CREATE NEW MODELS
+RUN echo "=== TRAINING MODELS ON RENDER ===" && \
+    python train_on_render.py
 
-# Copy the main app
-COPY ml_api.py .
-COPY start.py .
+# Verify models were created
+RUN echo "=== VERIFYING MODELS ===" && \
+    ls -la *.pkl && \
+    python -c "import pickle; import joblib; import numpy as np; data = pickle.load(open('model_rf_retrained.pkl', 'rb')); print('✅ Random Forest model works')" && \
+    python -c "import pickle; import joblib; import numpy as np; data = pickle.load(open('tfidf_vectorizer_retrained.pkl', 'rb')); print('✅ Vectorizer works')"
 
 EXPOSE 10000
 
