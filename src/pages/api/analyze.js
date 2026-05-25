@@ -9,7 +9,7 @@ import * as cheerio from 'cheerio';
 // ============================================
 // For local testing: http://localhost:5000
 // For production: set FLASK_API_URL in Vercel env variables
-const FLASK_API_URL = process.env.FLASK_API_URL || 'http://localhost:5000';
+const FLASK_API_URL = process.env.FLASK_API_URL || 'https://fake-news-detector-xx85.onrender.com';
 
 // ============================================
 // URL DETECTION AND SCRAPING
