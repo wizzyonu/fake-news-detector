@@ -1,5 +1,16 @@
-import os
 import sys
+import os
+
+# Fix for numpy 2.x vs 1.x compatibility
+# This creates the _core module that numpy 2.x expects but numpy 1.x doesn't have
+try:
+    import numpy as np
+    if not hasattr(np, '_core'):
+        np._core = np.core
+except:
+    pass
+
+# Now continue with normal imports
 import pickle
 import joblib
 import numpy as np
@@ -19,7 +30,12 @@ print("STARTUP DEBUG - Checking for model files")
 print("=" * 60)
 print(f"Current working directory: {os.getcwd()}")
 print(f"Files in directory: {os.listdir('.')}")
-print(f"Python path: {sys.path}")
+print(f"Python version: {sys.version}")
+try:
+    import numpy as np
+    print(f"Numpy version: {np.__version__}")
+except:
+    print("Numpy version: Not found")
 print("=" * 60)
 
 app = Flask(__name__)
@@ -41,15 +57,14 @@ ABSOLUTE_FAKE_INDICATORS = [
 ]
 
 # ============================================
-# MODEL LOADING WITH DEBUG
+# MODEL LOADING WITH FIXES
 # ============================================
-print("\nStarting model loading function...")
 
 def load_models_with_vectorizers():
     """Load each model with its matching vectorizer"""
     global MODEL_VECTORIZER_PAIRS
     
-    print("Inside load_models_with_vectorizers function")
+    print("\nInside load_models_with_vectorizers function")
     
     # Define model-vectorizer pairs
     pairs = [
@@ -92,22 +107,42 @@ def load_models_with_vectorizers():
                 print(f"    ❌ File does not exist!")
                 continue
             
-            # Load vectorizer
+            # Load vectorizer with special handling for numpy version
             print(f"  Loading {vec_file}...")
             vectorizer = None
             
             if os.path.exists(vec_file):
                 try:
+                    # Try pickle first
                     with open(vec_file, 'rb') as f:
                         vectorizer = pickle.load(f)
                     print(f"    ✅ Loaded with pickle")
-                except Exception as pickle_error:
+                except Exception as e1:
+                    print(f"    Pickle failed: {e1}")
                     try:
+                        # Try joblib
                         vectorizer = joblib.load(vec_file)
                         print(f"    ✅ Loaded with joblib")
-                    except Exception as joblib_error:
-                        print(f"    Failed to load vectorizer: {joblib_error}")
-                        continue
+                    except Exception as e2:
+                        print(f"    Joblib failed: {e2}")
+                        
+                        # Last resort: try loading with explicit protocol handling
+                        try:
+                            import io
+                            with open(vec_file, 'rb') as f:
+                                # Try reading as bytes and loading with different protocol
+                                data_bytes = f.read()
+                                # Try different pickle protocols
+                                for protocol in [2, 3, 4, 5]:
+                                    try:
+                                        vectorizer = pickle.loads(data_bytes)
+                                        print(f"    ✅ Loaded with pickle protocol {protocol}")
+                                        break
+                                    except:
+                                        continue
+                        except Exception as e3:
+                            print(f"    All loading methods failed: {e3}")
+                            continue
             else:
                 print(f"    ❌ Vectorizer file does not exist!")
                 continue
@@ -142,9 +177,9 @@ def load_models_with_vectorizers():
     return len(MODEL_VECTORIZER_PAIRS) > 0
 
 # Call the loader immediately
-print("\nCalling load_models_with_vectorizers...")
+print("\nStarting model loading...")
 load_models_with_vectorizers()
-print(f"After loading, MODEL_VECTORIZER_PAIRS length: {len(MODEL_VECTORIZER_PAIRS)}")
+print(f"Final model count: {len(MODEL_VECTORIZER_PAIRS)}")
 
 # ============================================
 # HELPER FUNCTIONS
@@ -281,27 +316,10 @@ def debug_models():
     """Debug endpoint to check model loading"""
     result = {
         'cwd': os.getcwd(),
-        'files': os.listdir('.'),
-        'pkl_files': [f for f in os.listdir('.') if f.endswith('.pkl')],
+        'files': [f for f in os.listdir('.') if f.endswith('.pkl')],
         'models_loaded': len(MODEL_VECTORIZER_PAIRS),
         'model_names': [p['name'] for p in MODEL_VECTORIZER_PAIRS]
     }
-    
-    # Try to load one model manually
-    test_result = {}
-    try:
-        with open('model_b_balanced.pkl', 'rb') as f:
-            test_model = pickle.load(f)
-            test_result['model_b_balanced'] = {
-                'success': True,
-                'type': str(type(test_model)),
-                'has_predict': hasattr(test_model, 'predict')
-            }
-    except Exception as e:
-        test_result['model_b_balanced'] = {'success': False, 'error': str(e)}
-    
-    result['test_load'] = test_result
-    
     return jsonify(result)
 
 @app.route('/predict', methods=['POST'])
