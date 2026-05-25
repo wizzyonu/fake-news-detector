@@ -41,6 +41,17 @@ if not hasattr(np, '_core'):
     print("✅ Patched numpy._core submodules for model loading compatibility")
 
 # ============================================
+# LOGISTIC REGRESSION COMPATIBILITY PATCH FOR RENDER
+# ============================================
+try:
+    from sklearn.linear_model import LogisticRegression
+    if not hasattr(LogisticRegression, 'multi_class'):
+        LogisticRegression.multi_class = 'auto'
+        print("✅ Patched LogisticRegression class with default multi_class='auto'")
+except Exception as e:
+    print(f"⚠️ Could not patch LogisticRegression class: {e}")
+
+# ============================================
 # STARTUP DEBUG - Check files at runtime
 # ============================================
 print("=" * 60)
@@ -169,7 +180,10 @@ def test_models_work():
     for pair in MODEL_VECTORIZER_PAIRS:
         try:
             X = pair['vectorizer'].transform([test_text])
+            # Test both predict and predict_proba for version mismatch robustness
             pair['model'].predict(X)
+            if hasattr(pair['model'], 'predict_proba'):
+                pair['model'].predict_proba(X)
         except Exception as e:
             print(f"  ❌ Test prediction failed for {pair['name']}: {e}")
             return False
@@ -258,6 +272,14 @@ def load_models_with_vectorizers():
                 has_predict = hasattr(model, 'predict')
                 has_transform = hasattr(vectorizer, 'transform')
                 if has_predict and has_transform:
+                    # Dynamically patch missing multi_class attribute on LogisticRegression instances
+                    if not hasattr(model, 'multi_class'):
+                        try:
+                            model.multi_class = 'auto'
+                            print("      ✅ Patched model.multi_class = 'auto' on instance")
+                        except Exception as e:
+                            print(f"      ⚠️ Failed to patch multi_class on instance: {e}")
+                            
                     MODEL_VECTORIZER_PAIRS.append({
                         'name': model_file.replace('.pkl', ''),
                         'model': model,
