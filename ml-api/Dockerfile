@@ -11,16 +11,13 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy everything
+# Copy all files
 COPY . .
 
-# DELETE any existing .pkl files from the image (they are corrupted)
-RUN rm -f *.pkl
+# Run the model creation script
+RUN python create_models.py
 
-# RUN TRAINING - This MUST happen during build
-RUN python train_on_render.py
-
-# Verify training created the files
+# Verify models were created
 RUN ls -la *.pkl
 
 EXPOSE 10000
