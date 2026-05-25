@@ -7,13 +7,14 @@ from flask_cors import CORS
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
+import warnings
+warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
 
-# Global variables for models
-MODELS = {}
-VECTORIZER = None
+# Store model-vectorizer pairs
+MODEL_VECTORIZER_PAIRS = []
 
 # Nigerian fake news patterns
 ABSOLUTE_FAKE_INDICATORS = [
@@ -27,57 +28,126 @@ ABSOLUTE_FAKE_INDICATORS = [
     (r'(president|tinubu|buhari|gov|governor)\s+is\s+dead', 60),
 ]
 
-def load_models():
-    """Load all .pkl models from the current directory"""
-    global MODELS, VECTORIZER
+def load_file(filepath):
+    """Try multiple methods to load a pickle/joblib file"""
+    # Try joblib first (more robust)
+    try:
+        return joblib.load(filepath)
+    except:
+        pass
     
-    # List all .pkl files in current directory
-    pkl_files = [f for f in os.listdir('.') if f.endswith('.pkl')]
-    print(f"Found .pkl files: {pkl_files}")
-    
-    # Try to load each model file
-    for file in pkl_files:
+    # Try pickle with different protocols
+    for protocol in [None, 2, 3, 4, 5]:
         try:
-            # Try pickle first
-            with open(file, 'rb') as f:
-                model = pickle.load(f)
-                # Check if it's a classifier (has predict method)
-                if hasattr(model, 'predict'):
-                    name = file.replace('.pkl', '')
-                    MODELS[name] = model
-                    print(f"✅ Loaded model: {name}")
+            with open(filepath, 'rb') as f:
+                if protocol is None:
+                    return pickle.load(f)
+                else:
+                    return pickle.loads(f.read())
         except:
-            try:
-                # Try joblib
-                model = joblib.load(file)
-                if hasattr(model, 'predict'):
-                    name = file.replace('.pkl', '')
-                    MODELS[name] = model
-                    print(f"✅ Loaded model with joblib: {name}")
-            except Exception as e:
-                print(f"❌ Failed to load {file}: {e}")
+            continue
     
-    # Try to identify vectorizer (TfidfVectorizer)
-    for file in pkl_files:
-        if 'tfidf' in file.lower() or 'vectorizer' in file.lower() or 'vec' in file.lower():
-            try:
-                with open(file, 'rb') as f:
-                    obj = pickle.load(f)
-                    if isinstance(obj, TfidfVectorizer) or hasattr(obj, 'transform'):
-                        VECTORIZER = obj
-                        print(f"✅ Loaded vectorizer: {file}")
-                        break
-            except:
-                try:
-                    obj = joblib.load(file)
-                    if isinstance(obj, TfidfVectorizer) or hasattr(obj, 'transform'):
-                        VECTORIZER = obj
-                        print(f"✅ Loaded vectorizer with joblib: {file}")
-                        break
-                except:
-                    pass
+    return None
+
+def load_models_with_vectorizers():
+    """Load each model with its matching vectorizer"""
+    global MODEL_VECTORIZER_PAIRS
     
-    return len(MODELS) > 0
+    # Define model-vectorizer pairs based on filenames
+    pairs = [
+        ('model_b_balanced.pkl', 'tfidf_vec_balanced.pkl'),
+        ('model_b_final_balanced.pkl', 'tfidf_vec_final_balanced.pkl'),
+        ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),
+        ('model_b_multi_source.pkl', 'tfidf_vec_multi_source.pkl'),
+        ('model_latest.pkl', 'tfidf_vec_latest.pkl'),
+    ]
+    
+    for model_file, vec_file in pairs:
+        try:
+            print(f"Loading {model_file}...")
+            model = load_file(model_file)
+            
+            print(f"Loading {vec_file}...")
+            vectorizer = load_file(vec_file)
+            
+            if model is not None and vectorizer is not None:
+                if hasattr(model, 'predict') and hasattr(vectorizer, 'transform'):
+                    MODEL_VECTORIZER_PAIRS.append({
+                        'name': model_file.replace('.pkl', ''),
+                        'model': model,
+                        'vectorizer': vectorizer
+                    })
+                    print(f"✅ Loaded pair: {model_file} + {vec_file}")
+                else:
+                    print(f"❌ Invalid objects: model has predict={hasattr(model, 'predict')}, vectorizer has transform={hasattr(vectorizer, 'transform')}")
+            else:
+                print(f"❌ Failed to load: model={model is not None}, vectorizer={vectorizer is not None}")
+        except Exception as e:
+            print(f"❌ Error loading pair {model_file}: {e}")
+    
+    return len(MODEL_VECTORIZER_PAIRS) > 0
+
+def get_ensemble_prediction(text):
+    """Get predictions from all model-vectorizer pairs"""
+    if not MODEL_VECTORIZER_PAIRS:
+        return None, None, []
+    
+    predictions = []
+    
+    for pair in MODEL_VECTORIZER_PAIRS:
+        try:
+            # Transform text using this model's specific vectorizer
+            X = pair['vectorizer'].transform([text])
+            
+            # Get prediction
+            pred = pair['model'].predict(X)[0]
+            
+            # Get confidence if available
+            confidence = 50.0
+            if hasattr(pair['model'], 'predict_proba'):
+                proba = pair['model'].predict_proba(X)[0]
+                confidence = float(max(proba) * 100)
+            
+            # Determine if prediction is FAKE
+            is_fake = False
+            if hasattr(pair['model'], 'classes_'):
+                classes = pair['model'].classes_
+                if len(classes) == 2:
+                    # Convert to string for comparison
+                    class_str = str(classes[0]).upper()
+                    if class_str in ['FAKE', '1', 'FALSE']:
+                        is_fake = bool(pred == classes[0])
+                    else:
+                        is_fake = bool(pred == classes[1])
+                else:
+                    pred_str = str(pred).upper()
+                    is_fake = pred_str in ['FAKE', '1', 'FALSE']
+            else:
+                pred_str = str(pred).upper()
+                is_fake = pred_str in ['FAKE', '1', 'FALSE']
+            
+            predictions.append({
+                'name': pair['name'],
+                'is_fake': is_fake,
+                'confidence': confidence
+            })
+            print(f"  {pair['name']}: {'FAKE' if is_fake else 'REAL'} (conf: {confidence:.1f}%)")
+        except Exception as e:
+            print(f"Error with {pair['name']}: {e}")
+    
+    if not predictions:
+        return None, None, []
+    
+    # Ensemble voting
+    fake_votes = sum(1 for p in predictions if p['is_fake'])
+    total_models = len(predictions)
+    is_fake = fake_votes > total_models / 2
+    
+    # Average confidence of models that agree
+    agreeing_confidences = [p['confidence'] for p in predictions if p['is_fake'] == is_fake]
+    avg_confidence = sum(agreeing_confidences) / len(agreeing_confidences) if agreeing_confidences else 50.0
+    
+    return bool(is_fake), float(avg_confidence), predictions
 
 def calculate_pattern_score(text):
     """Calculate pattern-based score"""
@@ -132,84 +202,12 @@ def calculate_pattern_score(text):
     total = fake_score - real_score
     return min(95, max(5, total))
 
-def get_ml_prediction(text):
-    """Get prediction from ML models"""
-    if not VECTORIZER or not MODELS:
-        return None, None
-    
-    try:
-        # Transform text using vectorizer
-        X = VECTORIZER.transform([text])
-        
-        # Get predictions from all models
-        predictions = {}
-        for name, model in MODELS.items():
-            try:
-                pred = model.predict(X)[0]
-                
-                # Try to get probability
-                proba = None
-                if hasattr(model, 'predict_proba'):
-                    proba = model.predict_proba(X)[0]
-                elif hasattr(model, 'decision_function'):
-                    # For SVM style models
-                    decision = model.decision_function(X)[0]
-                    proba = [1/(1+np.exp(-decision)), 1/(1+np.exp(decision))]
-                
-                # Determine if prediction is FAKE
-                is_fake = False
-                confidence = 50
-                
-                if hasattr(model, 'classes_'):
-                    classes = model.classes_
-                    if len(classes) == 2:
-                        # Binary classification
-                        if classes[0] in ['FAKE', 1, 'fake', 'Fake']:
-                            is_fake = (pred == classes[0])
-                            if proba is not None:
-                                confidence = max(proba) * 100
-                        else:
-                            is_fake = (pred == classes[1])
-                            if proba is not None:
-                                confidence = max(proba) * 100
-                    else:
-                        is_fake = (pred in ['FAKE', 'fake', 1, 'Fake'])
-                else:
-                    is_fake = (pred in ['FAKE', 'fake', 1, 'Fake'])
-                
-                predictions[name] = {
-                    'prediction': pred,
-                    'is_fake': is_fake,
-                    'confidence': confidence if proba is not None else (70 if is_fake else 30)
-                }
-            except Exception as e:
-                print(f"Error with model {name}: {e}")
-        
-        if not predictions:
-            return None, None
-        
-        # Ensemble vote
-        fake_votes = sum(1 for p in predictions.values() if p.get('is_fake', False))
-        total_models = len(predictions)
-        is_fake = fake_votes > total_models / 2
-        
-        # Average confidence
-        confidences = [p.get('confidence', 50) for p in predictions.values()]
-        avg_confidence = sum(confidences) / len(confidences) if confidences else (70 if is_fake else 30)
-        
-        return is_fake, avg_confidence
-        
-    except Exception as e:
-        print(f"ML prediction error: {e}")
-        return None, None
-
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
         'status': 'healthy',
-        'models_loaded': len(MODELS),
-        'vectorizer_loaded': VECTORIZER is not None,
-        'models_list': list(MODELS.keys())
+        'models_loaded': len(MODEL_VECTORIZER_PAIRS),
+        'models_list': [p['name'] for p in MODEL_VECTORIZER_PAIRS]
     })
 
 @app.route('/predict', methods=['POST'])
@@ -220,8 +218,8 @@ def predict():
     if not text or len(text) < 20:
         return jsonify({'error': 'Text too short (minimum 20 characters)'}), 400
     
-    # Get ML prediction
-    ml_is_fake, ml_confidence = get_ml_prediction(text)
+    # Get ensemble predictions
+    ml_is_fake, ml_confidence, model_predictions = get_ensemble_prediction(text)
     
     # Get pattern score
     pattern_score = calculate_pattern_score(text)
@@ -230,7 +228,7 @@ def predict():
     
     # Combine: 70% ML, 30% pattern
     if ml_is_fake is not None:
-        combined_is_fake = ml_is_fake
+        combined_is_fake = bool(ml_is_fake)
         if ml_is_fake and pattern_is_fake:
             combined_confidence = (ml_confidence * 0.7) + (pattern_confidence * 0.3)
         elif ml_is_fake:
@@ -240,7 +238,6 @@ def predict():
         
         model_used = 'ensemble'
     else:
-        # Fallback to pattern only
         combined_is_fake = pattern_is_fake
         combined_confidence = pattern_confidence
         model_used = 'pattern-only-fallback'
@@ -250,40 +247,53 @@ def predict():
         combined_is_fake = True
         combined_confidence = max(combined_confidence, 85)
     
+    # Convert model predictions to JSON-serializable format
+    serializable_predictions = []
+    for p in model_predictions:
+        serializable_predictions.append({
+            'name': str(p['name']),
+            'is_fake': bool(p['is_fake']),
+            'confidence': float(p['confidence'])
+        })
+    
     return jsonify({
         'classification': 'FAKE' if combined_is_fake else 'REAL',
-        'confidence': round(combined_confidence, 1),
-        'pattern_score': pattern_score,
+        'confidence': round(float(combined_confidence), 1),
+        'pattern_score': int(pattern_score),
         'ml_available': ml_is_fake is not None,
-        'ml_prediction': 'FAKE' if ml_is_fake else 'REAL' if ml_is_fake is not None else None,
-        'ml_confidence': ml_confidence if ml_is_fake is not None else None,
-        'model_used': model_used,
-        'models_loaded': list(MODELS.keys())
+        'ml_confidence': round(float(ml_confidence), 1) if ml_is_fake is not None else None,
+        'model_used': str(model_used),
+        'models_loaded': [str(p['name']) for p in MODEL_VECTORIZER_PAIRS],
+        'model_votes': serializable_predictions
     })
 
 @app.route('/model-info', methods=['GET'])
 def model_info():
+    """Detailed information about loaded models"""
     info = {}
-    for name, model in MODELS.items():
-        info[name] = {
-            'type': str(type(model).__name__),
-            'has_predict_proba': hasattr(model, 'predict_proba')
+    for pair in MODEL_VECTORIZER_PAIRS:
+        model = pair['model']
+        vectorizer = pair['vectorizer']
+        info[pair['name']] = {
+            'model_type': str(type(model).__name__),
+            'has_predict_proba': hasattr(model, 'predict_proba'),
+            'vectorizer_type': str(type(vectorizer).__name__),
+            'feature_count': len(vectorizer.get_feature_names_out()) if hasattr(vectorizer, 'get_feature_names_out') else 'unknown'
         }
     return jsonify({
         'models': info,
-        'vectorizer_type': str(type(VECTORIZER)) if VECTORIZER else None,
-        'vectorizer_loaded': VECTORIZER is not None
+        'total_models': len(MODEL_VECTORIZER_PAIRS)
     })
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("Loading ML models...")
+    print("Loading ML models with their vectorizers...")
     print("=" * 50)
     
-    if load_models():
-        print(f"\n✅ Loaded {len(MODELS)} models successfully")
-        print(f"✅ Vectorizer loaded: {VECTORIZER is not None}")
-        print(f"📦 Models: {list(MODELS.keys())}")
+    if load_models_with_vectorizers():
+        print(f"\n✅ Loaded {len(MODEL_VECTORIZER_PAIRS)} model-vectorizer pairs")
+        for pair in MODEL_VECTORIZER_PAIRS:
+            print(f"   - {pair['name']}")
     else:
         print("\n⚠️ No models loaded. Will fall back to pattern detection.")
     
