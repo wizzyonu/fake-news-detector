@@ -14,15 +14,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy everything
 COPY . .
 
-# RUN THE TRAINING SCRIPT TO CREATE NEW MODELS
-RUN echo "=== TRAINING MODELS ON RENDER ===" && \
-    python train_on_render.py
+# DELETE any existing .pkl files from the image (they are corrupted)
+RUN rm -f *.pkl
 
-# Verify models were created
-RUN echo "=== VERIFYING MODELS ===" && \
-    ls -la *.pkl && \
-    python -c "import pickle; import joblib; import numpy as np; data = pickle.load(open('model_rf_retrained.pkl', 'rb')); print('✅ Random Forest model works')" && \
-    python -c "import pickle; import joblib; import numpy as np; data = pickle.load(open('tfidf_vectorizer_retrained.pkl', 'rb')); print('✅ Vectorizer works')"
+# RUN TRAINING - This MUST happen during build
+RUN python train_on_render.py
+
+# Verify training created the files
+RUN ls -la *.pkl
 
 EXPOSE 10000
 

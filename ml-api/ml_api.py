@@ -46,7 +46,7 @@ ABSOLUTE_FAKE_INDICATORS = [
 ]
 
 # ============================================
-# MODEL LOADING - UPDATE THE PAIRS HERE
+# MODEL LOADING - SIMPLIFIED VERSION
 # ============================================
 
 def load_models_with_vectorizers():
@@ -56,16 +56,11 @@ def load_models_with_vectorizers():
     print("\nInside load_models_with_vectorizers function")
     
     # ============================================
-    # UPDATE THESE PAIRS - This is where you put your retrained models
+    # UPDATE THESE PAIRS - Simplified version
     # ============================================
     pairs = [
-        # For retrained models (use the same vectorizer for all)
         ('model_b_final_balanced.pkl', 'tfidf_vectorizer.pkl'),  # Random Forest
         ('model_b_logreg.pkl', 'tfidf_vectorizer.pkl'),          # Logistic Regression
-        
-        # If you have more retrained models, add them here:
-        # ('model_rf_retrained.pkl', 'tfidf_vectorizer.pkl'),
-        # ('model_lr_retrained.pkl', 'tfidf_vectorizer.pkl'),
     ]
     
     print(f"Will try to load {len(pairs)} model pairs")
