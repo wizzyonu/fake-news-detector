@@ -146,6 +146,21 @@ def load_models_with_vectorizers():
                     except Exception as e2:
                         print(f"    Joblib failed: {e2}")
                         continue
+                
+                # Fix for scikit-learn version mismatch where idf_ is missing or not recognized
+                if vectorizer is not None and hasattr(vectorizer, '_tfidf'):
+                    _tfidf = vectorizer._tfidf
+                    if not hasattr(_tfidf, 'idf_'):
+                        if hasattr(_tfidf, '_idf_diag'):
+                            try:
+                                import scipy.sparse as sp
+                                if sp.issparse(_tfidf._idf_diag):
+                                    _tfidf.idf_ = _tfidf._idf_diag.diagonal()
+                                else:
+                                    _tfidf.idf_ = _tfidf._idf_diag
+                                print("      ✅ Recovered idf_ attribute from _idf_diag for older scikit-learn version compatibility")
+                            except Exception as e:
+                                print(f"      ⚠️ Failed to recover idf_: {e}")
             else:
                 print(f"    ❌ Vectorizer file does not exist!")
                 continue
