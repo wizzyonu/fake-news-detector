@@ -75,8 +75,106 @@ ABSOLUTE_FAKE_INDICATORS = [
 ]
 
 # ============================================
-# MODEL LOADING - SIMPLIFIED VERSION
+# MODEL LOADING WITH AUTO-RETRAIN FALLBACK
 # ============================================
+
+def train_fresh_models():
+    """Train fresh models from CSV data for guaranteed compatibility"""
+    global MODEL_VECTORIZER_PAIRS
+    import glob
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import train_test_split
+    
+    print("\n" + "=" * 60)
+    print("TRAINING FRESH MODELS FROM CSV DATA")
+    print("=" * 60)
+    
+    csv_files = glob.glob('*.csv')
+    print(f"Found {len(csv_files)} CSV files")
+    
+    all_texts = []
+    all_labels = []
+    
+    for file in csv_files:
+        try:
+            df = pd.read_csv(file)
+            text_col = None
+            label_col = None
+            for col in df.columns:
+                if col.lower() in ['text', 'content', 'article', 'news', 'statement']:
+                    text_col = col
+                if col.lower() in ['label', 'class', 'category', 'type']:
+                    label_col = col
+            if text_col and label_col:
+                df_filtered = df[df[label_col].isin(['FAKE', 'REAL'])]
+                all_texts.extend(df_filtered[text_col].astype(str).tolist())
+                all_labels.extend(df_filtered[label_col].tolist())
+                print(f"  ✅ {file}: {len(df_filtered)} samples")
+            else:
+                print(f"  ⚠️ Skipped {file}")
+        except Exception as e:
+            print(f"  ❌ Error loading {file}: {e}")
+    
+    if len(all_texts) < 10:
+        print("⚠️ Not enough CSV data found, using minimal sample")
+        all_texts = [
+            "URGENT!!! Share this to 10 WhatsApp groups",
+            "President Tinubu announced new policies today",
+            "BREAKING NEWS!!! EXCLUSIVE!!! SHOCKING!!!",
+            "The Central Bank of Nigeria released new guidelines",
+            "WIN FREE MONEY!!! Send to 20 contacts NOW!!!",
+            "Official government statement on economic reforms",
+            "NCDC confirms new cases of Lassa fever",
+            "EXPOSED!!! INEC officials caught rigging!!!",
+            "Premium Times reports on budget passage",
+            "DEATH HOAX: Governor found dead in London"
+        ]
+        all_labels = ['FAKE', 'REAL', 'FAKE', 'REAL', 'FAKE', 'REAL', 'REAL', 'FAKE', 'REAL', 'FAKE']
+    
+    print(f"\n📊 Total training data: {len(all_texts)} samples")
+    print(f"   FAKE: {all_labels.count('FAKE')}, REAL: {all_labels.count('REAL')}")
+    
+    vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), stop_words='english')
+    X = vectorizer.fit_transform(all_texts)
+    X_train, X_test, y_train, y_test = train_test_split(X, all_labels, test_size=0.2, random_state=42, stratify=all_labels)
+    
+    # Train Random Forest
+    print("🤖 Training Random Forest...")
+    rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+    rf.fit(X_train, y_train)
+    rf_score = rf.score(X_test, y_test)
+    print(f"   ✅ Accuracy: {rf_score:.2%}")
+    
+    # Train Logistic Regression
+    print("🤖 Training Logistic Regression...")
+    lr = LogisticRegression(max_iter=1000, random_state=42)
+    lr.fit(X_train, y_train)
+    lr_score = lr.score(X_test, y_test)
+    print(f"   ✅ Accuracy: {lr_score:.2%}")
+    
+    MODEL_VECTORIZER_PAIRS = [
+        {'name': 'random_forest', 'model': rf, 'vectorizer': vectorizer},
+        {'name': 'logistic_regression', 'model': lr, 'vectorizer': vectorizer},
+    ]
+    
+    print(f"\n✅ TRAINING COMPLETE: {len(MODEL_VECTORIZER_PAIRS)} models ready")
+    print(f"   RF: {rf_score:.2%}, LR: {lr_score:.2%}")
+    print("=" * 60)
+
+
+def test_models_work():
+    """Run a quick test prediction to verify models actually work"""
+    test_text = "URGENT breaking news share this now"
+    for pair in MODEL_VECTORIZER_PAIRS:
+        try:
+            X = pair['vectorizer'].transform([test_text])
+            pair['model'].predict(X)
+        except Exception as e:
+            print(f"  ❌ Test prediction failed for {pair['name']}: {e}")
+            return False
+    return True
+
 
 def load_models_with_vectorizers():
     """Load each model with its matching vectorizer"""
@@ -84,9 +182,6 @@ def load_models_with_vectorizers():
     
     print("\nInside load_models_with_vectorizers function")
     
-    # ============================================
-    # UPDATE THESE PAIRS - All loaded models
-    # ============================================
     pairs = [
         ('model_b_balanced.pkl', 'tfidf_vec_balanced.pkl'),
         ('model_b_final_balanced.pkl', 'tfidf_vec_final_balanced.pkl'),
@@ -108,15 +203,12 @@ def load_models_with_vectorizers():
             if os.path.exists(model_file):
                 file_size = os.path.getsize(model_file)
                 print(f"    File exists, size: {file_size} bytes")
-                
-                # Try pickle first
                 try:
                     with open(model_file, 'rb') as f:
                         model = pickle.load(f)
                     print(f"    ✅ Loaded with pickle")
                 except Exception as pickle_error:
                     print(f"    Pickle failed: {pickle_error}")
-                    # Try joblib
                     try:
                         model = joblib.load(model_file)
                         print(f"    ✅ Loaded with joblib")
@@ -133,81 +225,75 @@ def load_models_with_vectorizers():
             
             if os.path.exists(vec_file):
                 try:
-                    # Try pickle first
                     with open(vec_file, 'rb') as f:
                         vectorizer = pickle.load(f)
                     print(f"    ✅ Loaded with pickle")
                 except Exception as e1:
                     print(f"    Pickle failed: {e1}")
                     try:
-                        # Try joblib
                         vectorizer = joblib.load(vec_file)
                         print(f"    ✅ Loaded with joblib")
                     except Exception as e2:
                         print(f"    Joblib failed: {e2}")
                         continue
                 
-                # Fix for scikit-learn version mismatch where idf_ is in __dict__ but class property overrides it
+                # Fix idf_ / _idf_diag mismatch
                 if vectorizer is not None and hasattr(vectorizer, '_tfidf'):
                     _tfidf = vectorizer._tfidf
-                    # Case 1: idf_ is stored directly in __dict__, but the older class property requires _idf_diag
                     if 'idf_' in _tfidf.__dict__ and not hasattr(_tfidf, '_idf_diag'):
                         try:
                             import scipy.sparse as sp
                             idf_val = _tfidf.__dict__['idf_']
                             n_features = len(idf_val)
                             _tfidf._idf_diag = sp.spdiags(idf_val, diags=0, m=n_features, n=n_features)
-                            print("      ✅ Reconstructed _idf_diag from idf_ in __dict__ for older scikit-learn compatibility")
+                            print("      ✅ Reconstructed _idf_diag")
                         except Exception as e:
                             print(f"      ⚠️ Failed to reconstruct _idf_diag: {e}")
-                            
-                    # Case 2: Standard fallback if idf_ is missing but _idf_diag exists (just in case)
-                    elif not hasattr(_tfidf, 'idf_') and hasattr(_tfidf, '_idf_diag'):
-                        try:
-                            import scipy.sparse as sp
-                            if sp.issparse(_tfidf._idf_diag):
-                                _tfidf.idf_ = _tfidf._idf_diag.diagonal()
-                            else:
-                                _tfidf.idf_ = _tfidf._idf_diag
-                            print("      ✅ Recovered idf_ attribute from _idf_diag")
-                        except Exception as e:
-                            print(f"      ⚠️ Failed to recover idf_: {e}")
             else:
                 print(f"    ❌ Vectorizer file does not exist!")
                 continue
             
-            # Verify both loaded correctly
+            # Verify both loaded
             if model is not None and vectorizer is not None:
                 has_predict = hasattr(model, 'predict')
                 has_transform = hasattr(vectorizer, 'transform')
-                
                 if has_predict and has_transform:
                     MODEL_VECTORIZER_PAIRS.append({
                         'name': model_file.replace('.pkl', ''),
                         'model': model,
                         'vectorizer': vectorizer
                     })
-                    print(f"  ✅ Successfully added pair: {model_file}")
-                    print(f"     Model type: {type(model).__name__}")
-                    print(f"     Vectorizer type: {type(vectorizer).__name__}")
-                else:
-                    print(f"  ❌ Invalid objects: predict={has_predict}, transform={has_transform}")
-            else:
-                print(f"  ❌ Failed to load: model={model is not None}, vectorizer={vectorizer is not None}")
-                
+                    print(f"  ✅ Added pair: {model_file} ({type(model).__name__})")
+                    
         except Exception as e:
             print(f"  ❌ Exception loading pair {model_file}: {e}")
-            import traceback
-            traceback.print_exc()
     
     print(f"\n{'='*50}")
     print(f"LOADING COMPLETE: {len(MODEL_VECTORIZER_PAIRS)} pairs loaded")
     print(f"{'='*50}")
     return len(MODEL_VECTORIZER_PAIRS) > 0
 
-# Call the loader immediately
+
+# ============================================
+# STARTUP: Load models, test them, retrain if needed
+# ============================================
 print("\nStarting model loading...")
 load_models_with_vectorizers()
+print(f"Pre-trained model count: {len(MODEL_VECTORIZER_PAIRS)}")
+
+# Test if loaded models actually work
+if MODEL_VECTORIZER_PAIRS:
+    print("\nTesting loaded models with a sample prediction...")
+    if test_models_work():
+        print(f"✅ All {len(MODEL_VECTORIZER_PAIRS)} pre-trained models verified working!")
+    else:
+        print("⚠️ Pre-trained models failed test predictions — retraining from CSV data...")
+        MODEL_VECTORIZER_PAIRS = []
+        train_fresh_models()
+else:
+    print("⚠️ No pre-trained models loaded — training from CSV data...")
+    train_fresh_models()
+
 print(f"Final model count: {len(MODEL_VECTORIZER_PAIRS)}")
 
 # ============================================
