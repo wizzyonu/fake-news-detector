@@ -390,6 +390,14 @@ def debug_predict():
                 inspection_info['tfidf_dict_keys'] = list(getattr(_tfidf, '__dict__', {}).keys())
                 for key in ['_idf_diag', 'idf_', '_idf']:
                     inspection_info[f'has_{key}'] = hasattr(_tfidf, key)
+                
+                # Check direct access to idf_ to see the exact exception raised
+                try:
+                    val = _tfidf.idf_
+                    inspection_info['idf_value_type'] = str(type(val).__name__)
+                    inspection_info['idf_value_str'] = str(val)[:100]
+                except Exception as e:
+                    inspection_info['idf_access_error'] = f"{type(e).__name__}: {e}"
         except Exception as e:
             inspection_info['error'] = f"Inspection failed: {e}"
         
