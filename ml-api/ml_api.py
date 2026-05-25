@@ -147,20 +147,31 @@ def load_models_with_vectorizers():
                         print(f"    Joblib failed: {e2}")
                         continue
                 
-                # Fix for scikit-learn version mismatch where idf_ is missing or not recognized
+                # Fix for scikit-learn version mismatch where idf_ is in __dict__ but class property overrides it
                 if vectorizer is not None and hasattr(vectorizer, '_tfidf'):
                     _tfidf = vectorizer._tfidf
-                    if not hasattr(_tfidf, 'idf_'):
-                        if hasattr(_tfidf, '_idf_diag'):
-                            try:
-                                import scipy.sparse as sp
-                                if sp.issparse(_tfidf._idf_diag):
-                                    _tfidf.idf_ = _tfidf._idf_diag.diagonal()
-                                else:
-                                    _tfidf.idf_ = _tfidf._idf_diag
-                                print("      ✅ Recovered idf_ attribute from _idf_diag for older scikit-learn version compatibility")
-                            except Exception as e:
-                                print(f"      ⚠️ Failed to recover idf_: {e}")
+                    # Case 1: idf_ is stored directly in __dict__, but the older class property requires _idf_diag
+                    if 'idf_' in _tfidf.__dict__ and not hasattr(_tfidf, '_idf_diag'):
+                        try:
+                            import scipy.sparse as sp
+                            idf_val = _tfidf.__dict__['idf_']
+                            n_features = len(idf_val)
+                            _tfidf._idf_diag = sp.spdiags(idf_val, diags=0, m=n_features, n=n_features)
+                            print("      ✅ Reconstructed _idf_diag from idf_ in __dict__ for older scikit-learn compatibility")
+                        except Exception as e:
+                            print(f"      ⚠️ Failed to reconstruct _idf_diag: {e}")
+                            
+                    # Case 2: Standard fallback if idf_ is missing but _idf_diag exists (just in case)
+                    elif not hasattr(_tfidf, 'idf_') and hasattr(_tfidf, '_idf_diag'):
+                        try:
+                            import scipy.sparse as sp
+                            if sp.issparse(_tfidf._idf_diag):
+                                _tfidf.idf_ = _tfidf._idf_diag.diagonal()
+                            else:
+                                _tfidf.idf_ = _tfidf._idf_diag
+                            print("      ✅ Recovered idf_ attribute from _idf_diag")
+                        except Exception as e:
+                            print(f"      ⚠️ Failed to recover idf_: {e}")
             else:
                 print(f"    ❌ Vectorizer file does not exist!")
                 continue
