@@ -325,6 +325,48 @@ def debug_models():
     }
     return jsonify(result)
 
+@app.route('/debug-predict', methods=['GET', 'POST'])
+def debug_predict():
+    """Debug endpoint to run a prediction and return any errors raised"""
+    text = "URGENT!!! President Tinubu is dead. Share this to all WhatsApp groups within 5 minutes!"
+    if request.method == 'POST' and request.json:
+        text = request.json.get('text', text)
+        
+    debug_info = []
+    for pair in MODEL_VECTORIZER_PAIRS:
+        model_name = pair['name']
+        try:
+            # Step 1: Transform text
+            X = pair['vectorizer'].transform([text])
+            step_1 = "Success"
+        except Exception as e1:
+            step_1 = f"Failed: {e1}"
+            debug_info.append({
+                'name': model_name,
+                'vectorizer_error': step_1,
+                'model_error': 'Not run'
+            })
+            continue
+            
+        try:
+            # Step 2: Predict
+            pred = pair['model'].predict(X)[0]
+            step_2 = f"Success, prediction: {pred}"
+        except Exception as e2:
+            step_2 = f"Failed: {e2}"
+            
+        debug_info.append({
+            'name': model_name,
+            'vectorizer_status': step_1,
+            'model_status': step_2
+        })
+        
+    return jsonify({
+        'text_tested': text,
+        'models_count': len(MODEL_VECTORIZER_PAIRS),
+        'debug_info': debug_info
+    })
+
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
