@@ -74,64 +74,39 @@ async function scrapeArticleText(url) {
 
 function fallbackPatternDetection(text) {
   let fakeScore = 0;
-  const textLower = text.toLowerCase();
   
-  // 1. Death Hoax Detection
-  if (/(president|tinubu|buhari|gov|governor).{0,30}dead/i.test(text)) {
+  // Death hoax
+  if (/(president|tinubu|buhari).{0,30}dead/i.test(text)) {
     fakeScore += 60;
   }
   
-  // 2. WhatsApp Chain / Sharing Requests (highly flexible)
-  if (
-    /(share|forward|send|distribute|broadcast).{0,30}(groups|contacts|people|friends|persons|members|whatsapp)/i.test(textLower) ||
-    /send\s+to\s+\d+/i.test(textLower) ||
-    /forward\s+to\s+\d+/i.test(textLower) ||
-    /share\s+to\s+\d+/i.test(textLower)
-  ) {
-    fakeScore += 40;
+  // WhatsApp chain
+  if (/(SHARE|FORWARD).*(GROUPS|CONTACTS)/i.test(text)) {
+    fakeScore += 30;
   }
   
-  // 3. Grant / Palliative / Financial Scams
-  if (
-    /(grant|palliative|selected|won|claim|payment|credit|₦|\bngn\b|cash|package)/i.test(textLower) &&
-    /(federal|fg|government|cbn|nitda|ndic|ncdc|presidency|minister)/i.test(textLower)
-  ) {
-    fakeScore += 45;
-  }
+  // Exclamation marks
+  const exclamationCount = (text.match(/!/g) || []).length;
+  if (exclamationCount > 5) fakeScore += 15;
+  if (exclamationCount > 3) fakeScore += 10;
   
-  // 4. Urgency Indicators
-  if (
-    /(within|in|expires|only).{0,15}(\d+|one|two)\s*(minute|hour|day|min|hr)/i.test(textLower) ||
-    /(before\s+it\s+is\s+(removed|deleted|closed|taken\s+down))/i.test(textLower) ||
-    /\bhurry\b/i.test(textLower)
-  ) {
+  // Uppercase ratio
+  const uppercaseChars = (text.match(/[A-Z]/g) || []).length;
+  const totalLength = text.length;
+  if (totalLength > 0 && uppercaseChars / totalLength > 0.4) {
     fakeScore += 20;
   }
   
-  // 5. Exclamation Marks & Shouty Text
-  const exclamationCount = (text.match(/!/g) || []).length;
-  if (exclamationCount > 5) fakeScore += 15;
-  else if (exclamationCount > 3) fakeScore += 10;
-  
-  const uppercaseChars = (text.match(/[A-Z]/g) || []).length;
-  if (text.length > 0 && uppercaseChars / text.length > 0.35) {
-    fakeScore += 15;
-  }
-  
-  // 6. Real News Indicators (mitigation)
-  if (/premium times|punch newspaper|vanguard|guardian\.ng|channels tv|spokesperson/i.test(textLower)) {
-    fakeScore -= 25;
+  // Real indicators
+  if (/premium times|punch newspaper|vanguard|guardian\.ng/i.test(text)) {
+    fakeScore -= 30;
   }
   
   const finalScore = Math.min(95, Math.max(5, fakeScore));
-  const isFake = finalScore > 50;
-  
   return {
-    classification: isFake ? 'FAKE' : 'REAL',
-    confidence: isFake ? finalScore : 100 - finalScore,
-    pattern_score: finalScore,
-    model_used: 'pattern-fallback',
-    ml_available: false
+    isFake: finalScore > 50,
+    confidence: finalScore > 50 ? finalScore : 100 - finalScore,
+    score: finalScore
   };
 }
 
@@ -186,6 +161,8 @@ export default async function handler(req, res) {
       console.error('Flask API error:', mlError.message);
       // Fall back to pattern detection
       mlResult = fallbackPatternDetection(textToAnalyze);
+      mlResult.model_used = 'pattern-fallback';
+      mlResult.ml_available = false;
     }
     
     // Build explanation
