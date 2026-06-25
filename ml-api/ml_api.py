@@ -531,6 +531,8 @@ def debug_predict():
 def predict():
     data = request.json
     text = data.get('text', '')
+
+    print(f"\n📝 PREDICTION REQUEST: {text[:100]}...")
     
     if not text or len(text) < 20:
         return jsonify({'error': 'Text too short (minimum 20 characters)'}), 400
